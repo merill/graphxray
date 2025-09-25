@@ -52,16 +52,25 @@ Install the Graph X-Ray extension for your favorite browser.
 
 ### Manual Install
 
-To manually install the Graph X-Ray extension, download the latest release from the [GitHub Releases page](https://github.com/merill/graphxray/releases) and follow the instructions for your browser.
+To manually install the Graph X-Ray extension:
 
+#### Chrome/Edge
 - Download the latest `.zip` file from the [Releases page](https://github.com/merill/graphxray/releases).
 - Extract the contents of the `.zip` file.
-- Open your browser and navigate to
+- Open your browser and navigate to:
   - Microsoft Edge: `edge://extensions`
   - Google Chrome: `chrome://extensions`
-  - Firefox: `about:addons` or `about:debugging#/runtime/this-firefox` for temporary installation
 - Enable "Developer mode" by toggling the switch (usually in the bottom left or top right corner).
 - Click on "Load unpacked" and select the extracted folder.
+
+#### Firefox
+Since Firefox builds are not yet available in releases, you'll need to build from source:
+- Clone the repository: `git clone https://github.com/merill/graphxray.git`
+- Navigate to the project directory: `cd graphxray`
+- Install dependencies: `npm install`
+- Build for Firefox: `npm run build:firefox`
+- Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
+- Click "Load Temporary Add-on" and select the `manifest.json` file from the `build` folder
 
 ## Supported Microsoft Graph Endpoints
 
