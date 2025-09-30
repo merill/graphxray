@@ -1,4 +1,5 @@
 import { parseGraphUrl, GRAPH_DOMAINS, isUltraXRayDomain } from "./domains.js";
+import { runtime } from "./browserApi.js";
 
 const devxEndPoint =
   "https://devxapi-func-prod-eastus.azurewebsites.net/api/graphexplorersnippets";
@@ -125,7 +126,7 @@ const getRequestBody = async function (request) {
       });
       
       for (const url of urlsToTry) {
-        const response = await chrome.runtime.sendMessage({
+        const response = await runtime.sendMessage({
           type: "GET_REQUEST_BODY",
           url: url
         });
