@@ -42,7 +42,7 @@
   },
   "options_page": "options.html",
   "devtools_page": "dev.html",
-  "permissions": ["storage", "webRequest"],
+  "permissions": ["storage"],
   "content_security_policy": {
     "script-src": "self",
     "object-src": "self"

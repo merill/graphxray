@@ -1,12 +1,11 @@
 export function findMatchingUrlTemplate(url, templates) {
-  // not efficient since JS map is not lazy
-  const result = templates
-    .map((template) => matchTemplateCandidate(url, template))
-    .filter((templateResult) => templateResult)[0];
-
-  console.log("url", url, "candidates", templates, "result", result);
-
-  return result;
+  for (const template of templates) {
+    const result = matchTemplateCandidate(url, template);
+    if (result) {
+      return result;
+    }
+  }
+  return undefined;
 }
 
 function matchTemplateCandidate(url, template) {

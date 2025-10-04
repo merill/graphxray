@@ -47,128 +47,66 @@ export const getDevtoolsAPI = () => {
   return null;
 };
 
+// Helper to promisify Chrome callback-based APIs
+// Firefox returns promises natively, so we only wrap for Chrome
+// Preserves 'this' binding by accepting context object
+const promisify = (apiFunc, context, ...args) => {
+  if (isFirefox()) {
+    // Firefox APIs return promises natively
+    return apiFunc.call(context, ...args);
+  }
+  // Chrome uses callbacks, wrap in promise
+  return new Promise((resolve, reject) => {
+    apiFunc.call(context, ...args, (result) => {
+      if (browserAPI.runtime.lastError) {
+        reject(browserAPI.runtime.lastError);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+};
+
 // Helper for storage API with promise support
 export const storage = {
   local: {
-    get: (keys) => {
-      if (isFirefox()) {
-        // Firefox returns promises natively
-        return browserAPI.storage.local.get(keys);
-      } else {
-        // Chrome uses callbacks, wrap in promise
-        return new Promise((resolve, reject) => {
-          browserAPI.storage.local.get(keys, (result) => {
-            if (browserAPI.runtime.lastError) {
-              reject(browserAPI.runtime.lastError);
-            } else {
-              resolve(result);
-            }
-          });
-        });
-      }
-    },
-    set: (items) => {
-      if (isFirefox()) {
-        return browserAPI.storage.local.set(items);
-      } else {
-        return new Promise((resolve, reject) => {
-          browserAPI.storage.local.set(items, () => {
-            if (browserAPI.runtime.lastError) {
-              reject(browserAPI.runtime.lastError);
-            } else {
-              resolve();
-            }
-          });
-        });
-      }
-    },
-    remove: (keys) => {
-      if (isFirefox()) {
-        return browserAPI.storage.local.remove(keys);
-      } else {
-        return new Promise((resolve, reject) => {
-          browserAPI.storage.local.remove(keys, () => {
-            if (browserAPI.runtime.lastError) {
-              reject(browserAPI.runtime.lastError);
-            } else {
-              resolve();
-            }
-          });
-        });
-      }
-    },
-    clear: () => {
-      if (isFirefox()) {
-        return browserAPI.storage.local.clear();
-      } else {
-        return new Promise((resolve, reject) => {
-          browserAPI.storage.local.clear(() => {
-            if (browserAPI.runtime.lastError) {
-              reject(browserAPI.runtime.lastError);
-            } else {
-              resolve();
-            }
-          });
-        });
-      }
-    }
+    get: (keys) => promisify(browserAPI.storage.local.get, browserAPI.storage.local, keys),
+    set: (items) => promisify(browserAPI.storage.local.set, browserAPI.storage.local, items),
+    remove: (keys) => promisify(browserAPI.storage.local.remove, browserAPI.storage.local, keys),
+    clear: () => promisify(browserAPI.storage.local.clear, browserAPI.storage.local)
   }
 };
 
 // Helper for tabs API with promise support
 export const tabs = {
-  query: (queryInfo) => {
-    if (isFirefox()) {
-      return browserAPI.tabs.query(queryInfo);
-    } else {
-      return new Promise((resolve, reject) => {
-        browserAPI.tabs.query(queryInfo, (tabs) => {
-          if (browserAPI.runtime.lastError) {
-            reject(browserAPI.runtime.lastError);
-          } else {
-            resolve(tabs);
-          }
-        });
-      });
-    }
-  },
-  sendMessage: (tabId, message) => {
-    if (isFirefox()) {
-      return browserAPI.tabs.sendMessage(tabId, message);
-    } else {
-      return new Promise((resolve, reject) => {
-        browserAPI.tabs.sendMessage(tabId, message, (response) => {
-          if (browserAPI.runtime.lastError) {
-            reject(browserAPI.runtime.lastError);
-          } else {
-            resolve(response);
-          }
-        });
-      });
-    }
-  }
+  query: (queryInfo) => promisify(browserAPI.tabs.query, browserAPI.tabs, queryInfo),
+  sendMessage: (tabId, message) => promisify(browserAPI.tabs.sendMessage, browserAPI.tabs, tabId, message)
 };
 
 // Helper for runtime API
 export const runtime = {
-  sendMessage: (message) => {
-    if (isFirefox()) {
-      return browserAPI.runtime.sendMessage(message);
-    } else {
-      return new Promise((resolve, reject) => {
-        browserAPI.runtime.sendMessage(message, (response) => {
-          if (browserAPI.runtime.lastError) {
-            reject(browserAPI.runtime.lastError);
-          } else {
-            resolve(response);
-          }
-        });
-      });
-    }
-  },
+  sendMessage: (message) => promisify(browserAPI.runtime.sendMessage, browserAPI.runtime, message),
   onMessage: browserAPI ? browserAPI.runtime.onMessage : null,
   onInstalled: browserAPI ? browserAPI.runtime.onInstalled : null,
   getManifest: browserAPI ? browserAPI.runtime.getManifest : null
+};
+
+// Helper for webRequest API
+// Note: webRequest is callback-based in both Chrome and Firefox
+// Firefox also supports promises but we'll use callbacks for consistency
+export const webRequest = {
+  onBeforeRequest: {
+    addListener: (callback, filter, extraInfoSpec) => {
+      if (browserAPI && browserAPI.webRequest) {
+        browserAPI.webRequest.onBeforeRequest.addListener(callback, filter, extraInfoSpec);
+      }
+    },
+    removeListener: (callback) => {
+      if (browserAPI && browserAPI.webRequest) {
+        browserAPI.webRequest.onBeforeRequest.removeListener(callback);
+      }
+    }
+  }
 };
 
 export default browserAPI;

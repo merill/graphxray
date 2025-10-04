@@ -5,7 +5,7 @@ This document explains how to build and test the Firefox version of GraphXray.
 ## Key Differences from Chrome Version
 
 1. **Manifest Version**: Firefox uses Manifest V2 (Chrome uses V3)
-2. **Background Scripts**: Firefox uses persistent background scripts instead of service workers
+2. **Background Scripts**: Firefox uses non-persistent event-based background scripts (similar to Chrome's service workers)
 3. **Browser API**: Firefox prefers `browser.*` API over `chrome.*` API (though both work)
 4. **CSP Format**: Content Security Policy uses string format instead of object format
 
@@ -43,17 +43,17 @@ This will create a Firefox-compatible build in the `./build` directory with:
 
 ## Firefox-Specific Files
 
-- `manifest.firefox.json` - Firefox-compatible manifest
-- `src/background/firefox-wrapper.js` - Background script wrapper for Firefox
-- `src/common/browser-polyfill.js` - Browser API compatibility layer
+- `public/manifest.firefox.json` - Firefox-compatible manifest (MV2)
+- `public/dev.firefox.js` - Firefox devtools panel creation script
+- `src/common/browserApi.js` - Cross-browser API compatibility module
 - `scripts/build-firefox.js` - Firefox-specific build script
 
 ## Browser API Compatibility
 
-The extension uses a compatibility layer (`browser-polyfill.js`) that:
+The extension uses a unified API module (`browserApi.js`) that:
 - Detects whether to use `chrome.*` or `browser.*` API
-- Provides promise-based API for both browsers
-- Handles API differences transparently
+- Provides promise-based wrappers for Chrome callbacks
+- Handles API differences transparently across all extension components
 
 ## Known Firefox Limitations
 
