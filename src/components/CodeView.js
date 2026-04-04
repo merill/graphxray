@@ -8,6 +8,7 @@ import { IconButton } from "@fluentui/react/lib/Button";
 
 export const CodeView = ({ request, lightUrl, snippetLanguage }) => {
   const [isRequestBodyExpanded, setIsRequestBodyExpanded] = useState(false);
+  const [isBatchExecutionExpanded, setIsBatchExecutionExpanded] = useState(false);
   const [hoveredButton, setHoveredButton] = useState(null);
 
   let urlStyle = atomOneDark;
@@ -142,6 +143,10 @@ export const CodeView = ({ request, lightUrl, snippetLanguage }) => {
 
   const toggleRequestBody = () => {
     setIsRequestBodyExpanded(!isRequestBodyExpanded);
+  };
+
+  const toggleBatchExecution = () => {
+    setIsBatchExecutionExpanded(!isBatchExecutionExpanded);
   };
 
   // Process batch content if applicable
@@ -519,55 +524,141 @@ export const CodeView = ({ request, lightUrl, snippetLanguage }) => {
       )}
 
       {request.code && request.code.length > 0 && (
-        <div style={{ position: "relative" }}>
-          <SyntaxHighlighter
-            language={syntaxLanguage}
-            style={atomOneDark}
-            wrapLongLines={true}
-            customStyle={{
-              borderRadius: "8px",
-              padding: "12px",
-              paddingRight: "50px"
-            }}
-          >
-            {request.code}
-          </SyntaxHighlighter>
-          <IconButton
-            iconProps={{ iconName: "Copy" }}
-            title="Copy code to clipboard"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              copyToClipboard(request.code);
-            }}
-            onMouseEnter={() => setHoveredButton('code-copy')}
-            onMouseLeave={() => setHoveredButton(null)}
-            styles={{
-              root: {
-                position: "absolute",
-                top: "8px",
-                right: "8px",
-                backgroundColor: hoveredButton === 'code-copy'
-                  ? "rgba(255, 255, 255, 0.25)"
-                  : "rgba(255, 255, 255, 0.1)",
-                color: "#fff",
-                border: hoveredButton === 'code-copy'
-                  ? "1px solid rgba(255, 255, 255, 0.4)"
-                  : "1px solid transparent",
-                borderRadius: "4px",
-                padding: "4px",
-                cursor: "pointer",
-                minWidth: "32px",
-                width: "32px",
-                height: "32px",
-                transition: "all 0.2s ease",
-                boxShadow: hoveredButton === 'code-copy'
-                  ? "0 2px 6px rgba(0, 0, 0, 0.2)"
-                  : "none"
-              }
-            }}
-          />
-        </div>
+        request.batchCodeSnippets && request.batchCodeSnippets.length > 0 ? (
+          <div style={{ marginBottom: "15px" }}>
+            {/* Keep batch execution code available, but collapsed by default so focus stays on per-request snippets. */}
+            <div style={{ display: "flex", alignItems: "center", marginBottom: isBatchExecutionExpanded ? "8px" : "0" }}>
+              <IconButton
+                iconProps={{ iconName: isBatchExecutionExpanded ? "ChevronDown" : "ChevronRight" }}
+                title={isBatchExecutionExpanded ? "Collapse batch execution snippet" : "Expand batch execution snippet"}
+                onClick={toggleBatchExecution}
+                onMouseEnter={() => setHoveredButton('batch-execution-toggle')}
+                onMouseLeave={() => setHoveredButton(null)}
+                styles={{
+                  root: {
+                    minWidth: "24px",
+                    width: "24px",
+                    height: "24px",
+                    marginRight: "8px",
+                    color: lightUrl ? "#333" : "#fff",
+                    backgroundColor: hoveredButton === 'batch-execution-toggle'
+                      ? (lightUrl ? "rgba(0, 0, 0, 0.1)" : "rgba(255, 255, 255, 0.1)")
+                      : "transparent",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    transition: "background-color 0.2s ease"
+                  }
+                }}
+              />
+              <div style={{ fontSize: "14px", fontWeight: "bold", color: "#333" }}>
+                Batch Execution Snippet ({snippetLanguage})
+              </div>
+            </div>
+
+            {isBatchExecutionExpanded && (
+              <div style={{ position: "relative" }}>
+                <SyntaxHighlighter
+                  language={syntaxLanguage}
+                  style={atomOneDark}
+                  wrapLongLines={true}
+                  customStyle={{
+                    borderRadius: "8px",
+                    padding: "12px",
+                    paddingRight: "50px"
+                  }}
+                >
+                  {request.code}
+                </SyntaxHighlighter>
+                <IconButton
+                  iconProps={{ iconName: "Copy" }}
+                  title="Copy batch execution code to clipboard"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    copyToClipboard(request.code);
+                  }}
+                  onMouseEnter={() => setHoveredButton('code-copy')}
+                  onMouseLeave={() => setHoveredButton(null)}
+                  styles={{
+                    root: {
+                      position: "absolute",
+                      top: "8px",
+                      right: "8px",
+                      backgroundColor: hoveredButton === 'code-copy'
+                        ? "rgba(255, 255, 255, 0.25)"
+                        : "rgba(255, 255, 255, 0.1)",
+                      color: "#fff",
+                      border: hoveredButton === 'code-copy'
+                        ? "1px solid rgba(255, 255, 255, 0.4)"
+                        : "1px solid transparent",
+                      borderRadius: "4px",
+                      padding: "4px",
+                      cursor: "pointer",
+                      minWidth: "32px",
+                      width: "32px",
+                      height: "32px",
+                      transition: "all 0.2s ease",
+                      boxShadow: hoveredButton === 'code-copy'
+                        ? "0 2px 6px rgba(0, 0, 0, 0.2)"
+                        : "none"
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ position: "relative" }}>
+            <SyntaxHighlighter
+              language={syntaxLanguage}
+              style={atomOneDark}
+              wrapLongLines={true}
+              customStyle={{
+                borderRadius: "8px",
+                padding: "12px",
+                paddingRight: "50px"
+              }}
+            >
+              {request.code}
+            </SyntaxHighlighter>
+            <IconButton
+              iconProps={{ iconName: "Copy" }}
+              title="Copy code to clipboard"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                copyToClipboard(request.code);
+              }}
+              onMouseEnter={() => setHoveredButton('code-copy')}
+              onMouseLeave={() => setHoveredButton(null)}
+              styles={{
+                root: {
+                  position: "absolute",
+                  top: "8px",
+                  right: "8px",
+                  backgroundColor: hoveredButton === 'code-copy'
+                    ? "rgba(255, 255, 255, 0.25)"
+                    : "rgba(255, 255, 255, 0.1)",
+                  color: "#fff",
+                  border: hoveredButton === 'code-copy'
+                    ? "1px solid rgba(255, 255, 255, 0.4)"
+                    : "1px solid transparent",
+                  borderRadius: "4px",
+                  padding: "4px",
+                  cursor: "pointer",
+                  minWidth: "32px",
+                  width: "32px",
+                  height: "32px",
+                  transition: "all 0.2s ease",
+                  boxShadow: hoveredButton === 'code-copy'
+                    ? "0 2px 6px rgba(0, 0, 0, 0.2)"
+                    : "none"
+                }
+              }}
+            />
+          </div>
+        )
       )}
 
       {/* Batch code snippets - show individual code blocks for each request in the batch */}

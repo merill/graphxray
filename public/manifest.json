@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "short_name": "Graph X-Ray",
   "name": "Graph X-Ray",
   "description": "Graph X-Ray converts your Microsoft admin portal clicks into ready-to-use code in PowerShell, C#, Python, and more.",

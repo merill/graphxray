@@ -51,6 +51,8 @@ module.exports = {
   appContentScriptJs: resolveModule(resolveApp, 'src/contentScript/index'),
   appOptionsJs: resolveModule(resolveApp, 'src/options/index'),
   appDevToolsJs: resolveModule(resolveApp, 'src/devtools/index'),
+  // Keep CRA's service worker path key defined so downstream fs.existsSync checks always receive a valid path.
+  swSrc: resolveModule(resolveApp, 'src/service-worker'),
   appPackageJson: resolveApp('package.json'),
   appSrc: resolveApp('src'),
   appTsConfig: resolveApp('tsconfig.json'),
