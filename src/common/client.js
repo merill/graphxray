@@ -47,22 +47,20 @@ function buildBodyBlock(body) {
 
 function generateLocalPowerShellSnippet(method, url, body) {
   const { host, path } = parseGraphUrl(url);
-  const fullUrl = `https://${host}${path}`;
+  // Strip any leading slashes from path before joining to avoid double slashes (e.g. "https://host//v1.0/...")
+  const fullUrl = `https://${host}/${path.replace(/^\/+/, '')}`;
+  // Escape $ signs in the URL with a backtick so PowerShell does not treat them as variable expansions inside double-quoted strings
+  const escapedUrl = fullUrl.replace(/\$/g, '`$');
   const hasBody = body && body.trim().length > 0;
 
-  const lines = [
-    "Import-Module Microsoft.Graph",
-    "",
-    "Connect-MgGraph",
-    "",
-  ];
+  const lines = [];
 
   if (hasBody) {
     lines.push(...buildBodyBlock(body));
     lines.push("");
   }
 
-  let cmd = `Invoke-MgGraphRequest -Method ${method.toUpperCase()} -Uri "${fullUrl}"`;
+  let cmd = `Invoke-MgGraphRequest -Method ${method.toUpperCase()} -Uri "${escapedUrl}"`;
   if (hasBody) {
     cmd += ` -Body ($params | ConvertTo-Json -Depth 10) -ContentType "application/json"`;
   }
