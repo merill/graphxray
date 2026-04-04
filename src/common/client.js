@@ -18,7 +18,7 @@ function formatPowerShellValue(val, indent) {
 
   if (typeof val === "object") {
     const entries = Object.entries(val).map(
-      ([k, v]) => `${indent}\t${k} = ${formatPowerShellValue(v, indent + "\t")}`
+      ([k, v]) => `${indent}\t"${k}" = ${formatPowerShellValue(v, indent + "\t")}`
     );
     return `@{\n${entries.join("\n")}\n${indent}}`;
   }
