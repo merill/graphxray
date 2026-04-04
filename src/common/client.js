@@ -33,7 +33,7 @@ function buildBodyBlock(body) {
   try {
     const parsed = JSON.parse(body);
     for (const [key, value] of Object.entries(parsed)) {
-      lines.push(`\t${key} = ${formatPowerShellValue(value, "\t")}`);
+      lines.push(`\t"${key}" = ${formatPowerShellValue(value, "\t")}`);
     }
   } catch {
     lines.push(`\t# Raw body`);
