@@ -37,7 +37,7 @@ function buildBodyBlock(body) {
     }
   } catch {
     lines.push(`\t# Raw body`);
-    lines.push(`\t# ${body}`);
+    body.split('\n').forEach(line => lines.push(`\t# ${line}`));
   }
 
   lines.push("}");
