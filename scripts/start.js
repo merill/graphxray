@@ -20,7 +20,8 @@ const chalk = require('react-dev-utils/chalk');
 const webpack = require('webpack');
 const WebpackDevServer = require('webpack-dev-server');
 const clearConsole = require('react-dev-utils/clearConsole');
-const checkRequiredFiles = require('react-dev-utils/checkRequiredFiles');
+// Use local helper to avoid deprecated fs.F_OK usage in older react-dev-utils.
+const checkRequiredFiles = require('./utils/checkRequiredFiles');
 const {
   choosePort,
   createCompiler,
