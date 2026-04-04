@@ -23,7 +23,8 @@ function formatPowerShellValue(val, indent) {
     return `@{\n${entries.join("\n")}\n${indent}}`;
   }
 
-  return `"${String(val).replace(/[\`$"]/g, '`$&')}"`;
+  const escaped = String(val).replace(/[`$"]/g, "`$&");
+  return `"${escaped}"`;
 }
 
 function buildBodyBlock(body) {
