@@ -45,12 +45,38 @@ function buildBodyBlock(body) {
   return lines;
 }
 
-function generateLocalPowerShellSnippet(method, url, body) {
+function hasConsistencyLevelHeader(headers) {
+  if (!headers) {
+    return false;
+  }
+
+  if (Array.isArray(headers)) {
+    return headers.some(
+      (header) =>
+        header &&
+        typeof header.name === "string" &&
+        header.name.toLowerCase() === "consistencylevel"
+    );
+  }
+
+  if (typeof headers === "object") {
+    return Object.keys(headers).some(
+      (headerName) => headerName.toLowerCase() === "consistencylevel"
+    );
+  }
+
+  return false;
+}
+
+function generateLocalPowerShellSnippet(method, url, body, options = {}) {
   const { host, path } = parseGraphUrl(url);
   // Strip any leading slashes from path before joining to avoid double slashes (e.g. "https://host//v1.0/...")
   const fullUrl = `https://${host}/${path.replace(/^\/+/, '')}`;
   // Escape $ signs in the URL with a backtick so PowerShell does not treat them as variable expansions inside double-quoted strings
   const escapedUrl = fullUrl.replace(/\$/g, '`$');
+  const methodUpper = method.toUpperCase();
+  const includeConsistencyLevelHeader =
+    methodUpper === "GET" && options.includeConsistencyLevelHeader;
   const hasBody = body && body.trim().length > 0;
 
   const lines = [];
@@ -60,7 +86,11 @@ function generateLocalPowerShellSnippet(method, url, body) {
     lines.push("");
   }
 
-  let cmd = `Invoke-MgGraphRequest -Method ${method.toUpperCase()} -Uri "${escapedUrl}"`;
+  let cmd = `Invoke-MgGraphRequest -Method ${methodUpper} -Uri "${escapedUrl}"`;
+  // Keep ConsistencyLevel behavior from captured GET requests for advanced query endpoints.
+  if (includeConsistencyLevelHeader) {
+    cmd += ` -Headers @{ "ConsistencyLevel" = "eventual" }`;
+  }
   if (hasBody) {
     cmd += ` -Body ($params | ConvertTo-Json -Depth 10) -ContentType "application/json"`;
   }
@@ -69,7 +99,7 @@ function generateLocalPowerShellSnippet(method, url, body) {
   return lines.join("\n");
 }
 
-async function getSnippetFromDevX(snippetLanguage, method, url, body) {
+async function getSnippetFromDevX(snippetLanguage, method, url, body, options = {}) {
   console.log("Get code snippet from DevX:", url, method);
 
   if (isUltraXRayDomain(url)) {
@@ -78,9 +108,23 @@ async function getSnippetFromDevX(snippetLanguage, method, url, body) {
   }
 
   const bodyText = body ?? "";
+  const preferLocalPowerShell =
+    snippetLanguage === "powershell" && options.preferLocalPowerShell === true;
+  const devxOnly = options.devxOnly === true;
+
+  // For local-first UX, return PowerShell immediately and let caller optionally fetch DevX in a second pass.
+  if (preferLocalPowerShell) {
+    return generateLocalPowerShellSnippet(method, url, bodyText, options);
+  }
+
   const { path: parsedPath, host } = parseGraphUrl(url);
   const path = encodeURI(parsedPath);
-  const payload = `${method} ${path} HTTP/1.1\r\nHost: ${host}\r\nContent-Type: application/json\r\n\r\n${bodyText}`;
+  let payloadHeaders = `Host: ${host}\r\nContent-Type: application/json`;
+  // Forward ConsistencyLevel to DevX when present so generated snippets can include equivalent behavior.
+  if (method.toUpperCase() === "GET" && options.includeConsistencyLevelHeader) {
+    payloadHeaders += `\r\nConsistencyLevel: eventual`;
+  }
+  const payload = `${method} ${path} HTTP/1.1\r\n${payloadHeaders}\r\n\r\n${bodyText}`;
 
   const devxSnippetUri = buildDevxUri(snippetLanguage);
 
@@ -102,9 +146,9 @@ async function getSnippetFromDevX(snippetLanguage, method, url, body) {
   }
 
   // Fall back to local generation for PowerShell when DevX fails
-  if (snippetLanguage === "powershell") {
+  if (snippetLanguage === "powershell" && !devxOnly) {
     console.log("Falling back to local PowerShell snippet generation");
-    return generateLocalPowerShellSnippet(method, url, bodyText);
+    return generateLocalPowerShellSnippet(method, url, bodyText, options);
   }
 
   return null;
@@ -300,7 +344,12 @@ const getResponseContent = async function (harEntry) {
   return responseContent;
 };
 
-const getBatchCodeSnippets = async function (snippetLanguage, requestBody, baseUrl) {
+const getBatchCodeSnippets = async function (
+  snippetLanguage,
+  requestBody,
+  baseUrl,
+  options = {}
+) {
   console.log("Generating code snippets for batch request");
   
   if (!requestBody) {
@@ -323,13 +372,15 @@ const getBatchCodeSnippets = async function (snippetLanguage, requestBody, baseU
       
       // Get the body for this individual request
       const requestBodyText = request.body ? JSON.stringify(request.body) : "";
+      const includeConsistencyLevelHeader = hasConsistencyLevelHeader(request.headers);
       
       // Generate code snippet for this individual request
       const code = await getPowershellCmd(
         snippetLanguage,
         request.method,
         fullUrl,
-        requestBodyText
+        requestBodyText,
+        { ...options, includeConsistencyLevelHeader }
       );
       
       if (code) {
@@ -350,13 +401,20 @@ const getBatchCodeSnippets = async function (snippetLanguage, requestBody, baseU
   }
 };
 
-const getCodeView = async function (snippetLanguage, request, version, harEntry = null) {
+const getCodeView = async function (
+  snippetLanguage,
+  request,
+  version,
+  harEntry = null,
+  options = {}
+) {
   if (["OPTIONS"].includes(request.method)) {
     return null;
   }
   console.log("GetCodeView", snippetLanguage, request, harEntry);
   const requestBody = await getRequestBody(request);
   const responseContent = harEntry ? await getResponseContent(harEntry) : "";
+  const includeConsistencyLevelHeader = hasConsistencyLevelHeader(request.headers);
   
   let code = null;
   let batchCodeSnippets = [];
@@ -366,14 +424,20 @@ const getCodeView = async function (snippetLanguage, request, version, harEntry 
     console.log("Processing batch request for code generation");
     // Extract base URL for batch requests
     const baseUrl = request.url.split("/$batch")[0];
-    batchCodeSnippets = await getBatchCodeSnippets(snippetLanguage, requestBody, baseUrl);
+    batchCodeSnippets = await getBatchCodeSnippets(
+      snippetLanguage,
+      requestBody,
+      baseUrl,
+      options
+    );
     
     // Also generate a code snippet for the main batch request
     code = await getPowershellCmd(
       snippetLanguage,
       request.method,
       version + request.url,
-      requestBody
+      requestBody,
+      { ...options, includeConsistencyLevelHeader }
     );
   } else {
     // Regular single request
@@ -381,7 +445,8 @@ const getCodeView = async function (snippetLanguage, request, version, harEntry 
       snippetLanguage,
       request.method,
       version + request.url,
-      requestBody
+      requestBody,
+      { ...options, includeConsistencyLevelHeader }
     );
   }
   

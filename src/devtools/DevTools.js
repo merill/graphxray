@@ -105,6 +105,73 @@ class DevTools extends React.Component {
 
   async addRequestToStack(request, version, harEntry = null) {
     console.log("DevTools - addRequestToStack called with:", request, version, harEntry);
+    if (this.state.snippetLanguage === "powershell") {
+      const requestKey = `${Date.now()}-${Math.random()}`;
+
+      // Render local PowerShell immediately so users always get a snippet without waiting on network calls.
+      const localCodeView = await getCodeView(
+        this.state.snippetLanguage,
+        request,
+        version,
+        harEntry,
+        { preferLocalPowerShell: true }
+      );
+      console.log("DevTools - local getCodeView returned:", localCodeView);
+
+      if (!localCodeView) {
+        return;
+      }
+
+      localCodeView.__requestKey = requestKey;
+      this.setState((prevState) => ({ stack: [...prevState.stack, localCodeView] }));
+
+      // Try to upgrade to server-generated snippets; keep local content if DevX doesn't return valid code.
+      const serverCodeView = await getCodeView(
+        this.state.snippetLanguage,
+        request,
+        version,
+        harEntry,
+        { devxOnly: true }
+      );
+      console.log("DevTools - server getCodeView returned:", serverCodeView);
+
+      if (!serverCodeView || !serverCodeView.code || !serverCodeView.code.trim()) {
+        return;
+      }
+
+      serverCodeView.__requestKey = requestKey;
+
+      this.setState((prevState) => ({
+        stack: prevState.stack.map((item) => {
+          if (item.__requestKey !== requestKey) {
+            return item;
+          }
+
+          const localBatch = item.batchCodeSnippets || [];
+          const serverBatch = serverCodeView.batchCodeSnippets || [];
+          const serverBatchMap = new Map(serverBatch.map((snippet) => [snippet.id, snippet]));
+
+          // Replace individual batch snippets only when DevX provided a valid snippet for that request.
+          const mergedBatchCodeSnippets = localBatch.map((localSnippet) => {
+            const serverSnippet = serverBatchMap.get(localSnippet.id);
+            if (serverSnippet && serverSnippet.code && serverSnippet.code.trim()) {
+              return serverSnippet;
+            }
+            return localSnippet;
+          });
+
+          return {
+            ...item,
+            ...serverCodeView,
+            __requestKey: requestKey,
+            batchCodeSnippets: mergedBatchCodeSnippets,
+          };
+        }),
+      }));
+
+      return;
+    }
+
     const codeView = await getCodeView(
       this.state.snippetLanguage,
       request,
@@ -113,7 +180,7 @@ class DevTools extends React.Component {
     );
     console.log("DevTools - getCodeView returned:", codeView);
     if (codeView) {
-      this.setState({ stack: [...this.state.stack, codeView] });
+      this.setState((prevState) => ({ stack: [...prevState.stack, codeView] }));
     }
   }
 
