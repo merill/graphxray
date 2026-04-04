@@ -1,6 +1,6 @@
 {
   "name": "graph-x-ray",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": true,
   "dependencies": {
     "@babel/core": "^7.29.0",
