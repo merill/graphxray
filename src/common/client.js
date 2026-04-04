@@ -23,7 +23,7 @@ function formatPowerShellValue(val, indent) {
     return `@{\n${entries.join("\n")}\n${indent}}`;
   }
 
-  return `"${String(val).replace(/"/g, '`"')}"`;
+  return `"${String(val).replace(/[\`$"]/g, '`$&')}"`;
 }
 
 function buildBodyBlock(body) {
