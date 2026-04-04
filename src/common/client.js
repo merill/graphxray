@@ -3,63 +3,130 @@ import { parseGraphUrl, GRAPH_DOMAINS, isUltraXRayDomain } from "./domains.js";
 const devxEndPoint =
   "https://devxapi-func-prod-eastus.azurewebsites.net/api/graphexplorersnippets";
 
-const getPowershellCmd = async function (snippetLanguage, method, url, body) {
+function formatPowerShellValue(val, indent) {
+  if (val === null) return "$null";
+  if (typeof val === "boolean") return val ? "$true" : "$false";
+  if (typeof val === "number") return String(val);
+
+  if (Array.isArray(val)) {
+    if (val.length === 0) return "@()";
+    const items = val.map(
+      (v) => `${indent}\t${formatPowerShellValue(v, indent + "\t")}`
+    );
+    return `@(\n${items.join("\n")}\n${indent})`;
+  }
+
+  if (typeof val === "object") {
+    const entries = Object.entries(val).map(
+      ([k, v]) => `${indent}\t${k} = ${formatPowerShellValue(v, indent + "\t")}`
+    );
+    return `@{\n${entries.join("\n")}\n${indent}}`;
+  }
+
+  return `"${String(val).replace(/"/g, '`"')}"`;
+}
+
+function buildBodyBlock(body) {
+  const lines = [];
+  lines.push("$params = @{");
+
+  try {
+    const parsed = JSON.parse(body);
+    for (const [key, value] of Object.entries(parsed)) {
+      lines.push(`\t${key} = ${formatPowerShellValue(value, "\t")}`);
+    }
+  } catch {
+    lines.push(`\t# Raw body`);
+    lines.push(`\t# ${body}`);
+  }
+
+  lines.push("}");
+  return lines;
+}
+
+function generateLocalPowerShellSnippet(method, url, body) {
+  const { host, path } = parseGraphUrl(url);
+  const fullUrl = `https://${host}${path}`;
+  const hasBody = body && body.trim().length > 0;
+
+  const lines = [
+    "Import-Module Microsoft.Graph",
+    "",
+    "Connect-MgGraph",
+    "",
+  ];
+
+  if (hasBody) {
+    lines.push(...buildBodyBlock(body));
+    lines.push("");
+  }
+
+  let cmd = `Invoke-MgGraphRequest -Method ${method.toUpperCase()} -Uri "${fullUrl}"`;
+  if (hasBody) {
+    cmd += ` -Body ($params | ConvertTo-Json -Depth 10) -ContentType "application/json"`;
+  }
+  lines.push(cmd);
+
+  return lines.join("\n");
+}
+
+async function getSnippetFromDevX(snippetLanguage, method, url, body) {
   console.log("Get code snippet from DevX:", url, method);
-  
-  // Check if the URL is from an Ultra X-Ray domain - if so, don't call devx
+
   if (isUltraXRayDomain(url)) {
     console.log("Skipping DevX call for Ultra X-Ray domain:", url);
     return null;
   }
-  
-  const bodyText = body ?? ""; //Cast undefined and null to string
-  // Use the extracted parseGraphUrl function
+
+  const bodyText = body ?? "";
   const { path: parsedPath, host } = parseGraphUrl(url);
-  const path = encodeURI(parsedPath); //Replace the spaces in OData with + as expected by API
+  const path = encodeURI(parsedPath);
   const payload = `${method} ${path} HTTP/1.1\r\nHost: ${host}\r\nContent-Type: application/json\r\n\r\n${bodyText}`;
-  console.log("Payload:", payload);
 
-  const snippetParam = "?lang=%snippetLanguage%".replace(
-    "%snippetLanguage%",
-    snippetLanguage
-  );
-  const openApiParam = "&generation=openapi";
-
-  let devxSnippetUri = devxEndPoint;
-  if (snippetLanguage === "c#") {
-    devxSnippetUri = devxEndPoint;
-  } else if (["javascript", "java", "objective-c"].includes(snippetLanguage)) {
-    devxSnippetUri = devxEndPoint + snippetParam;
-  } else if (["go", "powershell", "python"].includes(snippetLanguage)) {
-    devxSnippetUri = devxEndPoint + snippetParam + openApiParam;
-  }
+  const devxSnippetUri = buildDevxUri(snippetLanguage);
 
   try {
     const response = await fetch(devxSnippetUri, {
-      headers: {
-        "content-type": "application/http",
-      },
+      headers: { "content-type": "application/http" },
       method: "POST",
       body: payload,
     });
-    console.log("DevX responded");
+
     if (response.ok) {
-      const resp = response.text();
-      console.log("DevX-Reponse", resp);
-      return resp;
-    } else {
-      const errorText = await response.text();
-      const errorMsg = `DevXError: ${response.status} ${response.statusText} for ${method} ${url} - Response: ${errorText}`;
-      console.log(errorMsg);
-      return null;
+      return await response.text();
     }
+
+    const errorText = await response.text();
+    console.log(`DevXError: ${response.status} ${response.statusText} for ${method} ${url} - Response: ${errorText}`);
   } catch (error) {
-    const errorMsg = `DevXError: Network/Request error for ${method} ${url} - ${
-      error.message || error
-    }`;
-    console.log(errorMsg, error);
+    console.log(`DevXError: Network/Request error for ${method} ${url} - ${error.message || error}`, error);
   }
-};
+
+  // Fall back to local generation for PowerShell when DevX fails
+  if (snippetLanguage === "powershell") {
+    console.log("Falling back to local PowerShell snippet generation");
+    return generateLocalPowerShellSnippet(method, url, bodyText);
+  }
+
+  return null;
+}
+
+function buildDevxUri(snippetLanguage) {
+  if (snippetLanguage === "c#") {
+    return devxEndPoint;
+  }
+
+  const langParam = `?lang=${snippetLanguage}`;
+
+  if (["go", "powershell", "python"].includes(snippetLanguage)) {
+    return `${devxEndPoint}${langParam}&generation=openapi`;
+  }
+
+  return `${devxEndPoint}${langParam}`;
+}
+
+// Preserve the original function name used throughout the codebase
+const getPowershellCmd = getSnippetFromDevX;
 
 const getRequestBody = async function (request) {
   let requestBody = "";
@@ -329,4 +396,4 @@ const getCodeView = async function (snippetLanguage, request, version, harEntry 
   console.log("CodeView", codeView);
   return codeView;
 };
-export { getPowershellCmd, getRequestBody, getResponseContent, getCodeView, getBatchCodeSnippets };
+export { getPowershellCmd, getRequestBody, getResponseContent, getCodeView, getBatchCodeSnippets, generateLocalPowerShellSnippet };
