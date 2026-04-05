@@ -2,6 +2,7 @@
   "name": "graph-x-ray",
   "version": "1.1.8",
   "private": true,
+  "license": "AGPL-3.0-only",
   "dependencies": {
     "@babel/core": "^7.29.0",
     "@fluentui/font-icons-mdl2": "^8.5.62",

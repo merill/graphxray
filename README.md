@@ -251,3 +251,7 @@ Please share feedback and report issues on [Github](https://github.com/merill/gr
 This project was originally a hackathon project by [Eunice](https://twitter.com/Eunixnho), Dhruv, Clement, [Monica](https://twitter.com/mumbihere)  & [@merill](https://twitter.com/merill).
 
 Special thanks to [@jorgeasaurus](https://github.com/jorgeasaurus) for major contributions including Firefox support and key reliability improvements such as the PowerShell fallback behavior.
+
+## License
+
+Licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
