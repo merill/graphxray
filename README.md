@@ -64,13 +64,19 @@ To manually install the Graph X-Ray extension:
 - Click on "Load unpacked" and select the extracted folder.
 
 #### Firefox
-Since Firefox builds are not yet available in releases, you'll need to build from source:
+For Firefox, use the Firefox-specific zip from the [Releases page](https://github.com/merill/graphxray/releases):
+- Download `graphxray-firefox-v<version>.zip`.
+- Extract the contents of the `.zip` file.
+- Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
+- Click **Load Temporary Add-on** and select the `manifest.json` file from the `build/graphxray-firefox` folder.
+
+If you prefer to build from source:
 - Clone the repository: `git clone https://github.com/merill/graphxray.git`
 - Navigate to the project directory: `cd graphxray`
 - Install dependencies: `npm install`
 - Build for Firefox: `npm run build:firefox`
 - Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
-- Click "Load Temporary Add-on" and select the `manifest.json` file from the `build` folder
+- Click **Load Temporary Add-on** and select the `manifest.json` file from the `build` folder
 
 ## Supported Microsoft Graph Endpoints
 
@@ -154,10 +160,13 @@ Production builds are automatically created in GitHub with the right version num
 
 If you want to create a production build of the extension on your desktop:
 
-- For Chrome/Edge: `npm run build`
-- For Firefox: `npm run build:firefox`
+- For Chrome/Edge + Firefox output folders in one run: `npm run build`
+- For Firefox-only flow: `npm run build:firefox`
 
-The build artifacts will be placed in the `build` folder.
+The build artifacts will be placed in the `build` folder:
+
+- `build/graphxray`
+- `build/graphxray-firefox`
 
 ## Available Scripts
 
@@ -179,6 +188,11 @@ It correctly bundles React in production mode and optimizes the build for the be
 The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
+This command also creates:
+
+- `build/graphxray` (Chrome/Edge package folder)
+- `build/graphxray-firefox` (Firefox package folder)
+
 ### `npm run build:firefox`
 
 Builds the app specifically for Firefox, using the Firefox manifest (Manifest V2) instead of the Chrome/Edge manifest (Manifest V3).
@@ -196,6 +210,33 @@ To add support for a new endpoint.
 1. **Add domain to [manifest.json](./src/public/manifest.json)** - Note the manifest requires the / at the end of the domain.
 1. **Test the endpoint** - Make a request to the new blade and verify that it appears in Graph X-Ray.
 
+### Firefox notes
+
+Key Firefox-specific details:
+
+- **Manifest Version**: Firefox build uses Manifest V2 while Chrome/Edge uses Manifest V3.
+- **Background scripts**: Firefox build uses event-based background script handling.
+- **Browser APIs**: The project uses a compatibility layer so both `browser.*` and `chrome.*` usage works.
+- **CSP format**: Firefox manifest uses string CSP format.
+
+Firefox-specific files:
+
+- `public/manifest.firefox.json`
+- `public/dev.firefox.js`
+- `src/common/browserApi.js`
+- `scripts/build-firefox.js`
+
+Known Firefox limitations:
+
+- DevTools panel behavior can differ slightly from Chromium browsers.
+- Storage quotas differ from Chromium.
+- Some permissions can behave differently.
+
+Firefox debugging tips:
+
+- Use `about:debugging` to inspect extension/background logs.
+- Use browser console (`Ctrl+Shift+J`) for extension runtime errors.
+
 ## Feedback and Support
 
 This is an independently developed application and is not endorsed or supported by Microsoft.
@@ -205,3 +246,5 @@ Please share feedback and report issues on [Github](https://github.com/merill/gr
 ## Acknowledgements
 
 This project was originally a hackathon project by [Eunice](https://twitter.com/Eunixnho), Dhruv, Clement, [Monica](https://twitter.com/mumbihere)  & [@merill](https://twitter.com/merill).
+
+Special thanks to [@jorgeasaurus](https://github.com/jorgeasaurus) for major contributions including Firefox support and key reliability improvements such as the PowerShell fallback behavior.

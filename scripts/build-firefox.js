@@ -23,7 +23,9 @@ const webpack = require('webpack');
 const bfj = require('bfj');
 const configFactory = require('../config/webpack.config');
 const paths = require('../config/paths');
-const checkRequiredFiles = require('react-dev-utils/checkRequiredFiles');
+// Use local helper to avoid deprecated fs.F_OK usage in older react-dev-utils.
+const checkRequiredFiles = require('./utils/checkRequiredFiles');
+const { createFirefoxManifest } = require('./utils/manifestBuilder');
 const formatWebpackMessages = require('react-dev-utils/formatWebpackMessages');
 const printHostingInstructions = require('react-dev-utils/printHostingInstructions');
 const FileSizeReporter = require('react-dev-utils/FileSizeReporter');
@@ -33,6 +35,7 @@ const measureFileSizesBeforeBuild =
   FileSizeReporter.measureFileSizesBeforeBuild;
 const printFileSizesAfterBuild = FileSizeReporter.printFileSizesAfterBuild;
 const useYarn = fs.existsSync(paths.yarnLockFile);
+const firefoxBuildFolder = path.join(path.dirname(paths.appBuild), 'graphxray-firefox');
 
 // These sizes are pretty large. We'll warn for bundles exceeding them.
 const WARN_AFTER_BUNDLE_GZIP_SIZE = 512 * 1024;
@@ -117,7 +120,11 @@ checkBrowsers(paths.appPath, isInteractive)
       const firefoxManifestPath = path.join(paths.appPublic, 'manifest.firefox.json');
       
       if (fs.existsSync(firefoxManifestPath)) {
-        fs.copyFileSync(firefoxManifestPath, manifestPath);
+        createFirefoxManifest({
+          chromiumManifestPath: manifestPath,
+          firefoxManifestTemplatePath: firefoxManifestPath,
+          outputManifestPath: manifestPath,
+        });
         console.log(chalk.green('Firefox manifest copied successfully!'));
       } else {
         console.log(chalk.red('Warning: manifest.firefox.json not found!'));
@@ -146,6 +153,9 @@ if (typeof browser !== 'undefined' && !window.chrome) {
         console.log(chalk.green('Firefox devtools script (debug) copied!'));
       }
 
+      // Publish firefox-only output to a dedicated folder to keep build targets consistent.
+      moveFirefoxBuildToDedicatedFolder();
+
       console.log(chalk.green('\nFirefox extension build complete!'));
       console.log(
         chalk.cyan('\nTo test in Firefox:') +
@@ -154,7 +164,7 @@ if (typeof browser !== 'undefined' && !window.chrome) {
           '\n2. Click "This Firefox" in the sidebar' +
           '\n3. Click "Load Temporary Add-on"' +
           '\n4. Navigate to ' +
-          chalk.yellow(path.join(buildFolder, 'manifest.json')) +
+          chalk.yellow(path.join(path.relative(process.cwd(), firefoxBuildFolder), 'manifest.json')) +
           '\n'
       );
     },
@@ -258,4 +268,13 @@ function copyPublicFolder() {
     dereference: true,
     filter: file => file !== paths.appHtml && !file.endsWith('manifest.firefox.json'),
   });
+}
+
+function moveFirefoxBuildToDedicatedFolder() {
+  fs.emptyDirSync(firefoxBuildFolder);
+  fs.copySync(paths.appBuild, firefoxBuildFolder, {
+    dereference: true,
+  });
+  fs.removeSync(paths.appBuild);
+  console.log(chalk.green(`Firefox output moved to ${path.relative(process.cwd(), firefoxBuildFolder)}`));
 }

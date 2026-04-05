@@ -33,7 +33,9 @@
     "https://portal.office.com/",
     "https://security.microsoft.com/",
     "https://graph.windows.net/",
-    "https://api.azrbac.mspim.azure.com/"
+    "https://api.azrbac.mspim.azure.com/",
+    "https://admin.powerplatform.microsoft.com/",
+    "https://admin.cloud.microsoft/"
   ],
   "icons": {
     "16": "img/icon-16.png",
