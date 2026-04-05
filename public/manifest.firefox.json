@@ -44,7 +44,13 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "graphxray@merill.net",
-      "strict_min_version": "91.0"
+      "strict_min_version": "91.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ],
+        "optional": []
+      }
     }
   }
 }
