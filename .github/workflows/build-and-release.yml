@@ -97,12 +97,19 @@ jobs:
           - Automated release from commit ${{ github.sha }}
           
           ### Installation
-            - Extract the contents of the `.zip` file.
-            - Open your browser and navigate to
-                - Microsoft Edge: `edge://extensions`
-                - Google Chrome: `chrome://extensions`
-            - Enable "Developer mode" by toggling the switch (usually in the bottom left or top right corner).
-            - Click on "Load unpacked" and select the extracted folder.          
+          #### Chrome / Edge
+          - Download and extract `graphxray-v${{ steps.increment_version.outputs.new_version }}.zip`.
+          - Open your browser and navigate to
+            - Microsoft Edge: `edge://extensions`
+            - Google Chrome: `chrome://extensions`
+          - Enable "Developer mode" by toggling the switch (usually in the bottom left or top right corner).
+          - Click on "Load unpacked" and select the extracted folder.
+
+          #### Firefox (manual load)
+          - Download and extract `graphxray-firefox-v${{ steps.increment_version.outputs.new_version }}.zip`.
+          - Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
+          - Click **Load Temporary Add-on**.
+          - Select the `manifest.json` file from the extracted `graphxray-firefox` folder.
 
         draft: false
         prerelease: false
