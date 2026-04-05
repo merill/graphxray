@@ -1,25 +1,20 @@
+import { storage } from "./browserApi.js";
+
 const saveObjectInLocalStorage = async function (obj) {
-  return new Promise((resolve, reject) => {
-    try {
-      chrome.storage.local.set(obj, function () {
-        resolve();
-      });
-    } catch (ex) {
-      reject(ex);
-    }
-  });
+  try {
+    await storage.local.set(obj);
+  } catch (ex) {
+    throw ex;
+  }
 };
 
 const getObjectFromLocalStorage = async function (key) {
-  return new Promise((resolve, reject) => {
-    try {
-      chrome.storage.local.get(key, function (value) {
-        resolve(value[key]);
-      });
-    } catch (ex) {
-      reject(ex);
-    }
-  });
+  try {
+    const value = await storage.local.get(key);
+    return value[key];
+  } catch (ex) {
+    throw ex;
+  }
 };
 
 const commitIfActive = async function (obj) {

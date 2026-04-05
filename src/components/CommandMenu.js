@@ -2,6 +2,7 @@ import * as React from "react";
 import { CommandBar } from "@fluentui/react/lib/CommandBar";
 import { DefaultPalette } from "@fluentui/react";
 import { ContextualMenuItemType } from "@fluentui/react/lib/ContextualMenu";
+import { browserAPI } from "../common/browserApi.js";
 
 const styleBlue = {
   root: {
@@ -36,10 +37,10 @@ const overflowProps = {
 };
 
 export const openOptionsPage = () => {
-  if (chrome.runtime.openOptionsPage) {
-    chrome.runtime.openOptionsPage();
+  if (browserAPI.runtime.openOptionsPage) {
+    browserAPI.runtime.openOptionsPage();
   } else {
-    window.open(chrome.runtime.getURL("options.html"));
+    window.open(browserAPI.runtime.getURL("options.html"));
   }
 };
 

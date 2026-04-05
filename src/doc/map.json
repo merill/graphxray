@@ -1,0 +1,50 @@
+[
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/Overview",
+    "Markdown": "Microsoft_AAD_IAM-ActiveDirectoryMenuBlade-Overview.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps",
+    "Markdown": "applications.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/SignIns",
+    "Markdown": "signin-logs.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/GroupDetailsMenuBlade/~/GroupMemberships/groupId/[ObjectId]",
+    "Markdown": "group-memberships.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/GroupDetailsMenuBlade/~/Members/groupId/[ObjectId]",
+    "Markdown": "group-members.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/GroupDetailsMenuBlade/~/Owners/groupId/[ObjectId]",
+    "Markdown": "group-owners.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/GroupsManagementMenuBlade/~/AllGroups",
+    "Markdown": "groups.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Owners/objectId/[ObjectId]/appId/[ObjectId]",
+    "Markdown": "service-principal-owners.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/StartboardApplicationsMenuBlade/~/AppAppsPreview/menuId/",
+    "Markdown": "service-principals.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/UserDetailsMenuBlade/~/Profile/userId/[ObjectId]",
+    "Markdown": "user-details.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_IAM/UsersManagementMenuBlade/~/MsGraphUsers",
+    "Markdown": "users.md"
+  },
+  {
+    "PortalUri": "https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Owners/appId/[ObjectId]/isMSAApp/",
+    "Markdown": "application-owners.md"
+  }
+]
