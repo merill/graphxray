@@ -1,5 +1,6 @@
 import * as React from "react";
 import { CommandBar } from "@fluentui/react/lib/CommandBar";
+import { DownloadIcon, DeleteIcon } from "./Icons";
 
 class DevToolsCommandBar extends React.Component {
   render() {
@@ -8,13 +9,13 @@ class DevToolsCommandBar extends React.Component {
         key: "download",
         text: "Save script",
         onClick: this.props.saveScript,
-        iconProps: { iconName: "Download" },
+        onRenderIcon: () => <DownloadIcon />,
       },
       {
         key: "clear",
         text: "Clear session",
         onClick: this.props.clearStack,
-        iconProps: { iconName: "Delete" },
+        onRenderIcon: () => <DeleteIcon />,
       },
     ];
 

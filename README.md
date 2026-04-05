@@ -1,9 +1,9 @@
 # Graph X-Ray: See the Code Behind the Clicks
 
-| Microsoft Edge | Google Chrome |
-|-|-|
-| [![Microsoft Edge Add-ons](https://img.shields.io/badge/Microsoft_Edge-Install_Graph_X--Ray-0078d4?style=for-the-badge&logo=microsoft-edge&logoColor=white)](https://microsoftedge.microsoft.com/addons/detail/graph-xray/oplgganppgjhpihgciiifejplnnpodak) | [![Chrome Web Store](https://img.shields.io/badge/Google_Chrome-Install_Graph_X--Ray-4285f4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore/detail/graph-x-ray/gdhbldfajbedclijgcmmmobdbnjhnpdh) |
-|![Edge Web Store Users](https://img.shields.io/badge/Microsoft_Edge_--_Users-10k-gray?style=social&color=purple) ![Edge Web Store Stars](https://img.shields.io/chrome-web-store/stars/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Microsoft%20Edge%20-%20Rating&color=purple) | ![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Chrome%20-%20Users&color=purple) ![Chrome Web Store Stars](https://img.shields.io/chrome-web-store/stars/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Chrome%20-%20Rating&color=purple) |
+| Microsoft Edge | Google Chrome | Firefox |
+|-|-|-|
+| [![Microsoft Edge Add-ons](https://img.shields.io/badge/Microsoft_Edge-Install_Graph_X--Ray-0078d4?style=for-the-badge&logo=microsoft-edge&logoColor=white)](https://microsoftedge.microsoft.com/addons/detail/graph-xray/oplgganppgjhpihgciiifejplnnpodak) | [![Chrome Web Store](https://img.shields.io/badge/Google_Chrome-Install_Graph_X--Ray-4285f4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore/detail/graph-x-ray/gdhbldfajbedclijgcmmmobdbnjhnpdh) | [![Firefox Add-ons](https://img.shields.io/badge/Firefox-Install_Graph_X--Ray-FF7139?style=for-the-badge&logo=firefox&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/graph-xray/) |
+|![Edge Web Store Users](https://img.shields.io/badge/Microsoft_Edge_--_Users-10k-gray?style=social&color=purple) ![Edge Web Store Stars](https://img.shields.io/chrome-web-store/stars/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Microsoft%20Edge%20-%20Rating&color=purple) | ![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Chrome%20-%20Users&color=purple) ![Chrome Web Store Stars](https://img.shields.io/chrome-web-store/stars/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Chrome%20-%20Rating&color=purple) | ![Firefox Add-ons Users](https://img.shields.io/amo/users/graph-xray?style=social&label=Firefox%20-%20Users&color=purple) ![Firefox Add-ons Stars](https://img.shields.io/amo/stars/graph-xray?style=social&label=Firefox%20-%20Rating&color=purple) |
 
 Unlock the power of automation and learning in the Microsoft 365 ecosystem. Graph X-Ray is a developer tool that demystifies the Microsoft admin portals by revealing the exact Microsoft Graph API calls being made in the background as you work.
 
@@ -45,22 +45,41 @@ Supercharge your Microsoft 365 workflow. Install Graph X-Ray today and turn your
 
 Install the Graph X-Ray extension for your favorite browser.
 
-| Microsoft Edge | Google Chrome |
-|-|-|
-| [![Microsoft Edge Add-ons](https://img.shields.io/badge/Microsoft_Edge-Install_Graph_X--Ray-0078d4?style=for-the-badge&logo=microsoft-edge&logoColor=white)](https://microsoftedge.microsoft.com/addons/detail/graph-xray/oplgganppgjhpihgciiifejplnnpodak) | [![Chrome Web Store](https://img.shields.io/badge/Google_Chrome-Install_Graph_X--Ray-4285f4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore/detail/graph-x-ray/gdhbldfajbedclijgcmmmobdbnjhnpdh) |
-|![Edge Web Store Users](https://img.shields.io/badge/Microsoft_Edge_--_Users-10k-gray?style=social&color=purple) ![Edge Web Store Stars](https://img.shields.io/chrome-web-store/stars/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Microsoft%20Edge%20-%20Rating&color=purple) | ![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Chrome%20-%20Users&color=purple) ![Chrome Web Store Stars](https://img.shields.io/chrome-web-store/stars/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Chrome%20-%20Rating&color=purple) |
+| Microsoft Edge | Google Chrome | Firefox |
+|-|-|-|
+| [![Microsoft Edge Add-ons](https://img.shields.io/badge/Microsoft_Edge-Install_Graph_X--Ray-0078d4?style=for-the-badge&logo=microsoft-edge&logoColor=white)](https://microsoftedge.microsoft.com/addons/detail/graph-xray/oplgganppgjhpihgciiifejplnnpodak) | [![Chrome Web Store](https://img.shields.io/badge/Google_Chrome-Install_Graph_X--Ray-4285f4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore/detail/graph-x-ray/gdhbldfajbedclijgcmmmobdbnjhnpdh) | [![Firefox Add-ons](https://img.shields.io/badge/Firefox-Install_Graph_X--Ray-FF7139?style=for-the-badge&logo=firefox&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/graph-xray/) |
+|![Edge Web Store Users](https://img.shields.io/badge/Microsoft_Edge_--_Users-10k-gray?style=social&color=purple) ![Edge Web Store Stars](https://img.shields.io/chrome-web-store/stars/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Microsoft%20Edge%20-%20Rating&color=purple) | ![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Chrome%20-%20Users&color=purple) ![Chrome Web Store Stars](https://img.shields.io/chrome-web-store/stars/gdhbldfajbedclijgcmmmobdbnjhnpdh?style=social&label=Chrome%20-%20Rating&color=purple) | ![Firefox Add-ons Users](https://img.shields.io/amo/users/graph-xray?style=social&label=Firefox%20-%20Users&color=purple) ![Firefox Add-ons Stars](https://img.shields.io/amo/stars/graph-xray?style=social&label=Firefox%20-%20Rating&color=purple) |
 
 ### Manual Install
 
-To manually install the Graph X-Ray extension, download the latest release from the [GitHub Releases page](https://github.com/merill/graphxray/releases) and follow the instructions for your browser.
+To manually install the Graph X-Ray extension:
 
+#### Chrome/Edge
 - Download the latest `.zip` file from the [Releases page](https://github.com/merill/graphxray/releases).
 - Extract the contents of the `.zip` file.
-- Open your browser and navigate to
+- Open your browser and navigate to:
   - Microsoft Edge: `edge://extensions`
   - Google Chrome: `chrome://extensions`
 - Enable "Developer mode" by toggling the switch (usually in the bottom left or top right corner).
 - Click on "Load unpacked" and select the extracted folder.
+
+#### Firefox
+Install directly from Firefox Add-ons:
+- Open [Graph X-Ray on Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/graph-xray/) and click **Add to Firefox**.
+
+For manual loading, use the Firefox-specific zip from the [Releases page](https://github.com/merill/graphxray/releases):
+- Download `graphxray-firefox-v<version>.zip`.
+- Extract the contents of the `.zip` file.
+- Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
+- Click **Load Temporary Add-on** and select the `manifest.json` file from the extracted files (zip root).
+
+If you prefer to build from source:
+- Clone the repository: `git clone https://github.com/merill/graphxray.git`
+- Navigate to the project directory: `cd graphxray`
+- Install dependencies: `npm install`
+- Build for Firefox: `npm run build:firefox`
+- Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
+- Click **Load Temporary Add-on** and select the `manifest.json` file from the `build` folder
 
 ## Supported Microsoft Graph Endpoints
 
@@ -142,9 +161,15 @@ To load the extension, go to chrome://extensions or edge://extensions, turn on d
 
 Production builds are automatically created in GitHub with the right version number.
 
-If you want to create a production build of the extension on your desktop, run `npm run build`.
+If you want to create a production build of the extension on your desktop:
 
-The build artifacts will be placed in the `build` folder.
+- For Chrome/Edge + Firefox output folders in one run: `npm run build`
+- For Firefox-only flow: `npm run build:firefox`
+
+The build artifacts will be placed in the `build` folder:
+
+- `build/graphxray`
+- `build/graphxray-firefox`
 
 ## Available Scripts
 
@@ -166,6 +191,15 @@ It correctly bundles React in production mode and optimizes the build for the be
 The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
+This command also creates:
+
+- `build/graphxray` (Chrome/Edge package folder)
+- `build/graphxray-firefox` (Firefox package folder)
+
+### `npm run build:firefox`
+
+Builds the app specifically for Firefox, using the Firefox manifest (Manifest V2) instead of the Chrome/Edge manifest (Manifest V3).
+
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
 ## Adding non-Graph API calls to Ultra X-Ray
@@ -179,6 +213,33 @@ To add support for a new endpoint.
 1. **Add domain to [manifest.json](./src/public/manifest.json)** - Note the manifest requires the / at the end of the domain.
 1. **Test the endpoint** - Make a request to the new blade and verify that it appears in Graph X-Ray.
 
+### Firefox notes
+
+Key Firefox-specific details:
+
+- **Manifest Version**: Firefox build uses Manifest V2 while Chrome/Edge uses Manifest V3.
+- **Background scripts**: Firefox build uses event-based background script handling.
+- **Browser APIs**: The project uses a compatibility layer so both `browser.*` and `chrome.*` usage works.
+- **CSP format**: Firefox manifest uses string CSP format.
+
+Firefox-specific files:
+
+- `public/manifest.firefox.json`
+- `public/dev.firefox.js`
+- `src/common/browserApi.js`
+- `scripts/build-firefox.js`
+
+Known Firefox limitations:
+
+- DevTools panel behavior can differ slightly from Chromium browsers.
+- Storage quotas differ from Chromium.
+- Some permissions can behave differently.
+
+Firefox debugging tips:
+
+- Use `about:debugging` to inspect extension/background logs.
+- Use browser console (`Ctrl+Shift+J`) for extension runtime errors.
+
 ## Feedback and Support
 
 This is an independently developed application and is not endorsed or supported by Microsoft.
@@ -188,6 +249,8 @@ Please share feedback and report issues on [Github](https://github.com/merill/gr
 ## Acknowledgements
 
 This project was originally a hackathon project by [Eunice](https://twitter.com/Eunixnho), Dhruv, Clement, [Monica](https://twitter.com/mumbihere)  & [@merill](https://twitter.com/merill).
+
+Special thanks to [@jorgeasaurus](https://github.com/jorgeasaurus) for major contributions including Firefox support and key reliability improvements such as the PowerShell fallback behavior.
 
 ## License
 

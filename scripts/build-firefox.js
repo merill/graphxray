@@ -1,8 +1,10 @@
+#!/usr/bin/env node
 'use strict';
 
 // Do this as the first thing so that any code reading it knows the right env.
 process.env.BABEL_ENV = 'production';
 process.env.NODE_ENV = 'production';
+process.env.BROWSER_TARGET = 'firefox';
 
 // Makes the script crash on unhandled rejections instead of silently
 // ignoring them. In the future, promise rejections that are not handled will
@@ -14,12 +16,11 @@ process.on('unhandledRejection', err => {
 // Ensure environment variables are read.
 require('../config/env');
 
-
 const path = require('path');
-const chalk = require('react-dev-utils/chalk');
+const chalk = require('chalk');
 const fs = require('fs-extra');
-const bfj = require('bfj');
 const webpack = require('webpack');
+const bfj = require('bfj');
 const configFactory = require('../config/webpack.config');
 const paths = require('../config/paths');
 // Use local helper to avoid deprecated fs.F_OK usage in older react-dev-utils.
@@ -34,6 +35,7 @@ const measureFileSizesBeforeBuild =
   FileSizeReporter.measureFileSizesBeforeBuild;
 const printFileSizesAfterBuild = FileSizeReporter.printFileSizesAfterBuild;
 const useYarn = fs.existsSync(paths.yarnLockFile);
+const firefoxBuildFolder = path.join(path.dirname(paths.appBuild), 'graphxray-firefox');
 
 // These sizes are pretty large. We'll warn for bundles exceeding them.
 const WARN_AFTER_BUNDLE_GZIP_SIZE = 512 * 1024;
@@ -42,22 +44,11 @@ const WARN_AFTER_CHUNK_GZIP_SIZE = 1024 * 1024;
 const isInteractive = process.stdout.isTTY;
 
 // Warn and crash if required files are missing
-if (
-  !checkRequiredFiles([
-    paths.appPopupHtml,
-    paths.manifestJson,
-    paths.appIndexJs,
-    paths.appBackgroundJs,
-    paths.appContentScriptJs,
-    paths.appOptionsHtml,
-    paths.appOptionsJs,
-    paths.appDevToolsHtml,
-    paths.appDevToolsJs,
-  ])
-) {
+if (!checkRequiredFiles([paths.appIndexJs])) {
   process.exit(1);
 }
 
+// Process CLI arguments
 const argv = process.argv.slice(2);
 const writeStatsJson = argv.indexOf('--stats') !== -1;
 
@@ -78,8 +69,7 @@ checkBrowsers(paths.appPath, isInteractive)
     // if you're in it, you don't end up in Trash
     fs.emptyDirSync(paths.appBuild);
     // Merge with the public folder
-    const copyPublicFolder = require('./utils/copyPublicFolder');
-    copyPublicFolder(paths.appBuild);
+    copyPublicFolder();
     // Start the webpack build
     return build(previousFileSizes);
   })
@@ -102,9 +92,6 @@ checkBrowsers(paths.appPath, isInteractive)
         console.log(chalk.green('Compiled successfully.\n'));
       }
 
-      // Create a Firefox-targeted build folder so packaging can produce browser-specific zip artifacts.
-      createFirefoxBuildFolder();
-
       console.log('File sizes after gzip:\n');
       printFileSizesAfterBuild(
         stats,
@@ -116,14 +103,69 @@ checkBrowsers(paths.appPath, isInteractive)
       console.log();
 
       const appPackage = require(paths.appPackageJson);
+      const publicUrl = paths.publicUrlOrPath;
       const publicPath = config.output.publicPath;
       const buildFolder = path.relative(process.cwd(), paths.appBuild);
       printHostingInstructions(
         appPackage,
-        '',
+        publicUrl,
         publicPath,
         buildFolder,
         useYarn
+      );
+      
+      // Copy Firefox manifest over Chrome manifest
+      console.log(chalk.cyan('\nConfiguring for Firefox...'));
+      const manifestPath = path.join(paths.appBuild, 'manifest.json');
+      const firefoxManifestPath = path.join(paths.appPublic, 'manifest.firefox.json');
+      
+      if (fs.existsSync(firefoxManifestPath)) {
+        createFirefoxManifest({
+          chromiumManifestPath: manifestPath,
+          firefoxManifestTemplatePath: firefoxManifestPath,
+          outputManifestPath: manifestPath,
+        });
+        console.log(chalk.green('Firefox manifest copied successfully!'));
+      } else {
+        console.log(chalk.red('Warning: manifest.firefox.json not found!'));
+      }
+      
+      // Update background script entry point for Firefox
+      const backgroundPath = path.join(paths.appBuild, 'background.bundle.js');
+      if (fs.existsSync(backgroundPath)) {
+        let backgroundContent = fs.readFileSync(backgroundPath, 'utf8');
+        // Prepend Firefox compatibility wrapper
+        const wrapperCode = `
+// Firefox compatibility wrapper
+if (typeof browser !== 'undefined' && !window.chrome) {
+  window.chrome = browser;
+}
+`;
+        fs.writeFileSync(backgroundPath, wrapperCode + backgroundContent);
+        console.log(chalk.green('Background script updated for Firefox!'));
+      }
+      
+      // Copy Firefox-compatible dev.js
+      const devJsPath = path.join(paths.appBuild, 'dev.js');
+      const firefoxDevJsPath = path.join(paths.appPublic, 'dev.firefox.debug.js');
+      if (fs.existsSync(firefoxDevJsPath)) {
+        fs.copyFileSync(firefoxDevJsPath, devJsPath);
+        console.log(chalk.green('Firefox devtools script (debug) copied!'));
+      }
+
+      // Publish firefox-only output to a dedicated folder to keep build targets consistent.
+      moveFirefoxBuildToDedicatedFolder();
+
+      console.log(chalk.green('\nFirefox extension build complete!'));
+      console.log(
+        chalk.cyan('\nTo test in Firefox:') +
+          '\n1. Open Firefox and navigate to ' +
+          chalk.yellow('about:debugging') +
+          '\n2. Click "This Firefox" in the sidebar' +
+          '\n3. Click "Load Temporary Add-on"' +
+          '\n4. Navigate to ' +
+          chalk.yellow(path.join(path.relative(process.cwd(), firefoxBuildFolder), 'manifest.json')) +
+          '\n'
       );
     },
     err => {
@@ -151,7 +193,7 @@ checkBrowsers(paths.appPath, isInteractive)
 
 // Create the production build and print the deployment instructions.
 function build(previousFileSizes) {
-  console.log('Creating an optimized production build...');
+  console.log('Creating a Firefox-optimized production build...');
 
   const compiler = webpack(config);
   return new Promise((resolve, reject) => {
@@ -189,12 +231,15 @@ function build(previousFileSizes) {
         return reject(new Error(messages.errors.join('\n\n')));
       }
       if (
+        process.env.CI &&
+        (typeof process.env.CI !== 'string' ||
+          process.env.CI.toLowerCase() !== 'false') &&
         messages.warnings.length
       ) {
         console.log(
           chalk.yellow(
-            '\nTreating warnings as errors to maintain code quality.\n' +
-              'This applies to both local and CI builds.\n'
+            '\nTreating warnings as errors because process.env.CI = true.\n' +
+              'Most CI servers set it automatically.\n'
           )
         );
         return reject(new Error(messages.warnings.join('\n\n')));
@@ -218,48 +263,18 @@ function build(previousFileSizes) {
   });
 }
 
-function createFirefoxBuildFolder() {
-  const firefoxBuildFolder = path.join(path.dirname(paths.appBuild), 'graphxray-firefox');
+function copyPublicFolder() {
+  fs.copySync(paths.appPublic, paths.appBuild, {
+    dereference: true,
+    filter: file => file !== paths.appHtml && !file.endsWith('manifest.firefox.json'),
+  });
+}
+
+function moveFirefoxBuildToDedicatedFolder() {
   fs.emptyDirSync(firefoxBuildFolder);
   fs.copySync(paths.appBuild, firefoxBuildFolder, {
     dereference: true,
   });
-
-  configureFirefoxBuild(firefoxBuildFolder);
-  console.log(`Created Firefox build folder: ${path.relative(process.cwd(), firefoxBuildFolder)}`);
-}
-
-function configureFirefoxBuild(firefoxBuildFolder) {
-  const chromiumManifestPath = path.join(firefoxBuildFolder, 'manifest.json');
-  const firefoxManifestTemplatePath = path.join(paths.appPublic, 'manifest.firefox.json');
-
-  if (fs.existsSync(chromiumManifestPath) && fs.existsSync(firefoxManifestTemplatePath)) {
-    createFirefoxManifest({
-      chromiumManifestPath,
-      firefoxManifestTemplatePath,
-      outputManifestPath: chromiumManifestPath,
-    });
-  }
-
-  const firefoxDevScriptPath = path.join(paths.appPublic, 'dev.firefox.js');
-  const devScriptPath = path.join(firefoxBuildFolder, 'dev.js');
-  if (fs.existsSync(firefoxDevScriptPath)) {
-    fs.copyFileSync(firefoxDevScriptPath, devScriptPath);
-  }
-
-  const backgroundScriptPath = path.join(firefoxBuildFolder, 'background.bundle.js');
-  if (fs.existsSync(backgroundScriptPath)) {
-    const backgroundContent = fs.readFileSync(backgroundScriptPath, 'utf8');
-    if (!backgroundContent.includes('Firefox compatibility wrapper')) {
-      const wrapperCode = `// Firefox compatibility wrapper\nif (typeof browser !== 'undefined' && !window.chrome) {\n  window.chrome = browser;\n}\n`;
-      fs.writeFileSync(backgroundScriptPath, wrapperCode + backgroundContent);
-    }
-  }
-}
-
-function copyPublicFolder() {
-  fs.copySync(paths.appPublic, paths.appBuild, {
-    dereference: true,
-    filter: file => file !== paths.appHtml,
-  });
+  fs.removeSync(paths.appBuild);
+  console.log(chalk.green(`Firefox output moved to ${path.relative(process.cwd(), firefoxBuildFolder)}`));
 }

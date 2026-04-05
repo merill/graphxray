@@ -1,6 +1,6 @@
 {
   "name": "graph-x-ray",
-  "version": "1.0.9",
+  "version": "1.1.8",
   "private": true,
   "license": "AGPL-3.0-only",
   "dependencies": {
@@ -81,11 +81,13 @@
   "scripts": {
     "start": "node --openssl-legacy-provider scripts/start.js",
     "build": "node --openssl-legacy-provider scripts/build.js",
+    "build:firefox": "node --openssl-legacy-provider scripts/build-firefox.js",
     "test": "node scripts/test.js"
   },
   "eslintConfig": {
     "globals": {
-      "chrome": true
+      "chrome": true,
+      "browser": true
     },
     "extends": [
       "react-app",

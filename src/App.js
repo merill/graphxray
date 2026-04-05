@@ -10,6 +10,7 @@ import {
   getStack,
 } from "./common/storage.js";
 import { openOptionsPage } from "./components/CommandMenu.js";
+import { runtime } from "./common/browserApi.js";
 
 const theme = getTheme();
 
@@ -78,30 +79,27 @@ class App extends React.Component {
     });
   }
 
-  toggleStart = () => {
+  toggleStart = async () => {
     this.setState({ isActive: !this.state.isActive });
 
     if (this.state.isActive) {
-      chrome.runtime.sendMessage(
-        {
-          method: "start",
-        },
-        function (response) {
-          console.log(response.farewell);
-        }
-      );
+      try {
+        const response = await runtime.sendMessage({ method: "start" });
+        console.log(response.farewell);
+      } catch (error) {
+        console.error("Error sending start message:", error);
+      }
 
       saveObjectInLocalStorage({
         isActive: this.state.isActive,
         contextSwitches: 0,
       });
     } else {
-      chrome.runtime.sendMessage(
-        {
-          method: "stop",
-        },
-        function (response) {}
-      );
+      try {
+        await runtime.sendMessage({ method: "stop" });
+      } catch (error) {
+        console.error("Error sending stop message:", error);
+      }
       saveObjectInLocalStorage({
         isActive: this.state.isActive,
       });
