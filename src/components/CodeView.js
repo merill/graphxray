@@ -9,7 +9,13 @@ import { IconButton } from "@fluentui/react/lib/Button";
 const ColoredUrl = ({ url }) => {
   const parts = [];
   try {
-    const urlObj = new URL(url);
+    // PowerShell escapes $ as `$ in URLs — clean for parsing, preserve in output
+    const hasBacktickEscaping = url.includes('`$');
+    const cleanUrl = hasBacktickEscaping ? url.replace(/`\$/g, '$') : url;
+    const urlObj = new URL(cleanUrl);
+
+    // Helper: re-add backtick escaping for $ signs when needed
+    const preserve = (str) => hasBacktickEscaping ? str.replace(/\$/g, '`$') : str;
 
     // Protocol
     parts.push(<span key="proto" className="gxr-url-protocol">{urlObj.protocol}{"//"}</span>);
@@ -39,11 +45,11 @@ const ColoredUrl = ({ url }) => {
         }
         const eqIndex = param.indexOf("=");
         if (eqIndex >= 0) {
-          parts.push(<span key={`q-key-${i}`} className="gxr-url-query-key">{decodeURIComponent(param.slice(0, eqIndex))}</span>);
+          parts.push(<span key={`q-key-${i}`} className="gxr-url-query-key">{preserve(decodeURIComponent(param.slice(0, eqIndex)))}</span>);
           parts.push(<span key={`q-eq-${i}`} className="gxr-url-query-punctuation">=</span>);
-          parts.push(<span key={`q-val-${i}`} className="gxr-url-query-value">{decodeURIComponent(param.slice(eqIndex + 1))}</span>);
+          parts.push(<span key={`q-val-${i}`} className="gxr-url-query-value">{preserve(decodeURIComponent(param.slice(eqIndex + 1)))}</span>);
         } else {
-          parts.push(<span key={`q-key-${i}`} className="gxr-url-query-key">{decodeURIComponent(param)}</span>);
+          parts.push(<span key={`q-key-${i}`} className="gxr-url-query-key">{preserve(decodeURIComponent(param))}</span>);
         }
       });
     }
@@ -52,6 +58,42 @@ const ColoredUrl = ({ url }) => {
     return <span style={{ color: "#abb2bf" }}>{url}</span>;
   }
   return <>{parts}</>;
+};
+
+const ColoredCode = ({ code }) => {
+  // Split code around URLs, rendering URLs with ColoredUrl and the rest as styled code
+  // Also capture `$ (PowerShell backtick-dollar escaping) as part of the URL
+  const urlRegex = /(https?:\/\/(?:[^\s"'`]|`\$)+)/g;
+  const result = [];
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = urlRegex.exec(code)) !== null) {
+    // Text before the URL
+    if (match.index > lastIndex) {
+      result.push(
+        <span key={key++} className="gxr-code-text">{code.slice(lastIndex, match.index)}</span>
+      );
+    }
+    // Strip surrounding quotes from the matched URL if present
+    let url = match[1];
+    // Remove trailing quote chars that may have been captured
+    url = url.replace(/["'`]+$/, "");
+    result.push(
+      <span key={key++} className="gxr-code-url"><ColoredUrl url={url} /></span>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Remaining text after the last URL
+  if (lastIndex < code.length) {
+    result.push(
+      <span key={key++} className="gxr-code-text">{code.slice(lastIndex)}</span>
+    );
+  }
+
+  return <>{result}</>;
 };
 
 export const CodeView = ({ request, lightUrl, snippetLanguage, batchFilter }) => {
@@ -65,8 +107,6 @@ export const CodeView = ({ request, lightUrl, snippetLanguage, batchFilter }) =>
   if (lightUrl) {
     urlStyle = atomOneLight;
   }
-
-  let syntaxLanguage = snippetLanguage;
 
   // Function to format JSON content
   const formatJsonContent = (content) => {
@@ -608,18 +648,9 @@ export const CodeView = ({ request, lightUrl, snippetLanguage, batchFilter }) =>
 
             {isBatchExecutionExpanded && (
               <div style={{ position: "relative" }}>
-                <SyntaxHighlighter
-                  language={syntaxLanguage}
-                  style={atomOneDark}
-                  wrapLongLines={true}
-                  customStyle={{
-                    borderRadius: "8px",
-                    padding: "12px",
-                    paddingRight: "50px"
-                  }}
-                >
-                  {request.code}
-                </SyntaxHighlighter>
+                <pre className="gxr-code-block">
+                  <ColoredCode code={request.code} />
+                </pre>
                 <IconButton
                   iconProps={{ iconName: "Copy" }}
                   title="Copy batch execution code to clipboard"
@@ -717,18 +748,9 @@ export const CodeView = ({ request, lightUrl, snippetLanguage, batchFilter }) =>
           </div>
         ) : (
           <div style={{ position: "relative" }}>
-            <SyntaxHighlighter
-              language={syntaxLanguage}
-              style={atomOneDark}
-              wrapLongLines={true}
-              customStyle={{
-                borderRadius: "8px",
-                padding: "12px",
-                paddingRight: "50px"
-              }}
-            >
-              {request.code}
-            </SyntaxHighlighter>
+            <pre className="gxr-code-block">
+              <ColoredCode code={request.code} />
+            </pre>
             <IconButton
               iconProps={{ iconName: "Copy" }}
               title="Copy code to clipboard"
@@ -851,18 +873,9 @@ export const CodeView = ({ request, lightUrl, snippetLanguage, batchFilter }) =>
                 Request ID: {snippet.id} - {snippet.method} {snippet.url}
               </div>
               <div style={{ position: "relative" }}>
-                <SyntaxHighlighter
-                  language={syntaxLanguage}
-                  style={atomOneDark}
-                  wrapLongLines={true}
-                  customStyle={{
-                    borderRadius: "8px",
-                    padding: "12px",
-                    paddingRight: "50px"
-                  }}
-                >
-                  {snippet.code}
-                </SyntaxHighlighter>
+                <pre className="gxr-code-block">
+                  <ColoredCode code={snippet.code} />
+                </pre>
                 <IconButton
                   iconProps={{ iconName: "Copy" }}
                   title="Copy individual code to clipboard"

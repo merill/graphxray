@@ -194,3 +194,26 @@ td, th {
 .gxr-url-query-punctuation {
   color: #7f848e;
 }
+
+/* Code block with colored URLs */
+.gxr-code-block {
+  background: #282c34;
+  border-radius: 8px;
+  padding: 12px;
+  padding-right: 50px;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.gxr-code-text {
+  color: #abb2bf;
+}
+
+.gxr-code-url {
+  /* URLs inside code blocks inherit the colored URL styles */
+}

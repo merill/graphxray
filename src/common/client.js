@@ -74,7 +74,7 @@ function generateLocalPowerShellSnippet(method, url, body, options = {}) {
   // Strip any leading slashes from path before joining to avoid double slashes (e.g. "https://host//v1.0/...")
   const fullUrl = `https://${host}/${path.replace(/^\/+/, '')}`;
   // Escape $ signs in the URL with a backtick so PowerShell does not treat them as variable expansions inside double-quoted strings
-  const escapedUrl = fullUrl.replace(/\$/g, '`$');
+  const escapedUrl = fullUrl.replace(/\$/g, '`$$');
   const methodUpper = method.toUpperCase();
   const includeConsistencyLevelHeader =
     methodUpper === "GET" && options.includeConsistencyLevelHeader;
