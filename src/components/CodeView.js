@@ -6,10 +6,60 @@ import {
 } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { IconButton } from "@fluentui/react/lib/Button";
 
-export const CodeView = ({ request, lightUrl, snippetLanguage }) => {
+const ColoredUrl = ({ url }) => {
+  const parts = [];
+  try {
+    const urlObj = new URL(url);
+
+    // Protocol
+    parts.push(<span key="proto" className="gxr-url-protocol">{urlObj.protocol}{"//"}</span>);
+
+    // Host
+    parts.push(<span key="host" className="gxr-url-host">{urlObj.host}</span>);
+
+    // Path segments
+    const pathSegments = urlObj.pathname.split("/").filter(Boolean);
+    pathSegments.forEach((seg, i) => {
+      parts.push(<span key={`sep-${i}`} className="gxr-url-separator">/</span>);
+      if (/^(v1\.0|beta)$/i.test(seg)) {
+        parts.push(<span key={`seg-${i}`} className="gxr-url-version">{seg}</span>);
+      } else {
+        parts.push(<span key={`seg-${i}`} className="gxr-url-path">{seg}</span>);
+      }
+    });
+
+    // Query string
+    const search = urlObj.search;
+    if (search) {
+      parts.push(<span key="q-start" className="gxr-url-query-punctuation">?</span>);
+      const params = search.slice(1).split("&");
+      params.forEach((param, i) => {
+        if (i > 0) {
+          parts.push(<span key={`q-amp-${i}`} className="gxr-url-query-punctuation">&amp;</span>);
+        }
+        const eqIndex = param.indexOf("=");
+        if (eqIndex >= 0) {
+          parts.push(<span key={`q-key-${i}`} className="gxr-url-query-key">{decodeURIComponent(param.slice(0, eqIndex))}</span>);
+          parts.push(<span key={`q-eq-${i}`} className="gxr-url-query-punctuation">=</span>);
+          parts.push(<span key={`q-val-${i}`} className="gxr-url-query-value">{decodeURIComponent(param.slice(eqIndex + 1))}</span>);
+        } else {
+          parts.push(<span key={`q-key-${i}`} className="gxr-url-query-key">{decodeURIComponent(param)}</span>);
+        }
+      });
+    }
+  } catch {
+    // Fallback for malformed URLs
+    return <span style={{ color: "#abb2bf" }}>{url}</span>;
+  }
+  return <>{parts}</>;
+};
+
+export const CodeView = ({ request, lightUrl, snippetLanguage, batchFilter }) => {
   const [isRequestBodyExpanded, setIsRequestBodyExpanded] = useState(false);
   const [isBatchExecutionExpanded, setIsBatchExecutionExpanded] = useState(false);
   const [hoveredButton, setHoveredButton] = useState(null);
+
+  const isRest = snippetLanguage === "rest";
 
   let urlStyle = atomOneDark;
   if (lightUrl) {
@@ -256,7 +306,7 @@ export const CodeView = ({ request, lightUrl, snippetLanguage }) => {
                   }}>
                     Batch Request/Response Pairs
                   </div>
-                  {batchData.matchedPairs.map((pair, index) => (
+                  {(batchFilter ? batchData.matchedPairs.filter((pair) => batchFilter(pair.request.method, pair.request.url)) : batchData.matchedPairs).map((pair, index) => (
                     <div key={pair.id} style={{
                       border: "1px solid rgba(0, 0, 0, 0.1)",
                       borderRadius: "6px",
@@ -608,6 +658,63 @@ export const CodeView = ({ request, lightUrl, snippetLanguage }) => {
               </div>
             )}
           </div>
+        ) : isRest && request.code ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{
+              display: "inline-block",
+              padding: "2px 10px",
+              borderRadius: "12px",
+              fontSize: "12px",
+              fontWeight: "600",
+              lineHeight: "20px",
+              backgroundColor: "#0078d4",
+              color: "#fff",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}>
+              {request.displayRequestUrl ? request.displayRequestUrl.split(" ")[0] : ""}
+            </span>
+            <div style={{ position: "relative", flex: 1 }}>
+              <div className="gxr-rest-url">
+                <ColoredUrl url={request.code} />
+              </div>
+              <IconButton
+                iconProps={{ iconName: "Copy" }}
+                title="Copy URL to clipboard"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  copyToClipboard(request.code);
+                }}
+                onMouseEnter={() => setHoveredButton('code-copy')}
+                onMouseLeave={() => setHoveredButton(null)}
+                styles={{
+                  root: {
+                    position: "absolute",
+                    top: "8px",
+                    right: "8px",
+                    backgroundColor: hoveredButton === 'code-copy'
+                      ? "rgba(255, 255, 255, 0.25)"
+                      : "rgba(255, 255, 255, 0.1)",
+                    color: "#fff",
+                    border: hoveredButton === 'code-copy'
+                      ? "1px solid rgba(255, 255, 255, 0.4)"
+                      : "1px solid transparent",
+                    borderRadius: "4px",
+                    padding: "4px",
+                    cursor: "pointer",
+                    minWidth: "32px",
+                    width: "32px",
+                    height: "32px",
+                    transition: "all 0.2s ease",
+                    boxShadow: hoveredButton === 'code-copy'
+                      ? "0 2px 6px rgba(0, 0, 0, 0.2)"
+                      : "none"
+                  }
+                }}
+              />
+            </div>
+          </div>
         ) : (
           <div style={{ position: "relative" }}>
             <SyntaxHighlighter
@@ -672,10 +779,69 @@ export const CodeView = ({ request, lightUrl, snippetLanguage }) => {
           }}>
             Individual Request Code Snippets
           </div>
-          {request.batchCodeSnippets.map((snippet, index) => (
+          {(batchFilter ? request.batchCodeSnippets.filter((s) => batchFilter(s.method, s.url)) : request.batchCodeSnippets).map((snippet, index) => (
             <div key={snippet.id} style={{
               marginBottom: index < request.batchCodeSnippets.length - 1 ? "20px" : "0"
             }}>
+              {isRest ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                  <span style={{
+                    display: "inline-block",
+                    padding: "2px 10px",
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    lineHeight: "20px",
+                    backgroundColor: "#0078d4",
+                    color: "#fff",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}>
+                    {snippet.method}
+                  </span>
+                  <div style={{ position: "relative", flex: 1 }}>
+                    <div className="gxr-rest-url">
+                      <ColoredUrl url={snippet.code} />
+                    </div>
+                    <IconButton
+                      iconProps={{ iconName: "Copy" }}
+                      title="Copy URL to clipboard"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        copyToClipboard(snippet.code);
+                      }}
+                      onMouseEnter={() => setHoveredButton(`batch-code-${index}`)}
+                      onMouseLeave={() => setHoveredButton(null)}
+                      styles={{
+                        root: {
+                          position: "absolute",
+                          top: "8px",
+                          right: "8px",
+                          backgroundColor: hoveredButton === `batch-code-${index}`
+                            ? "rgba(255, 255, 255, 0.25)"
+                            : "rgba(255, 255, 255, 0.1)",
+                          color: "#fff",
+                          border: hoveredButton === `batch-code-${index}`
+                            ? "1px solid rgba(255, 255, 255, 0.4)"
+                            : "1px solid transparent",
+                          borderRadius: "4px",
+                          padding: "4px",
+                          cursor: "pointer",
+                          minWidth: "32px",
+                          width: "32px",
+                          height: "32px",
+                          transition: "all 0.2s ease",
+                          boxShadow: hoveredButton === `batch-code-${index}`
+                            ? "0 2px 6px rgba(0, 0, 0, 0.2)"
+                            : "none"
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
               <div style={{
                 fontSize: "14px",
                 fontWeight: "bold",
@@ -733,6 +899,8 @@ export const CodeView = ({ request, lightUrl, snippetLanguage }) => {
                   }}
                 />
               </div>
+                </>
+              )}
             </div>
           ))}
         </div>

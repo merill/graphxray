@@ -10,17 +10,20 @@ import { Dropdown } from "@fluentui/react/lib/Dropdown";
 import { Toggle } from "@fluentui/react/lib/Toggle";
 import { IconButton } from "@fluentui/react/lib/Button";
 import { TooltipHost } from "@fluentui/react/lib/Tooltip";
+import { SearchBox } from "@fluentui/react/lib/SearchBox";
 import DevToolsCommandBar from "../components/DevToolsCommandBar";
 import { Layer } from "@fluentui/react/lib/Layer";
 
 const theme = getTheme();
 
 const dropdownStyles = {
-  dropdown: { width: 300 },
+  dropdown: { width: 340 },
 };
 
 const options = [
+  { key: "rest", text: "REST", fileExt: "http" },
   { key: "powershell", text: "PowerShell", fileExt: "ps1" },
+  { key: "powershell-local", text: "PowerShell (Invoke-MgGraphRequest)", fileExt: "ps1" },
   { key: "python", text: "Python", fileExt: "py" },
   { key: "c#", text: "C#", fileExt: "cs" },
   { key: "javascript", text: "JavaScript", fileExt: "js" },
@@ -40,6 +43,11 @@ class DevTools extends React.Component {
       stack: [],
       snippetLanguage: "powershell",
       ultraXRayMode: ultraXRayMode,
+      filterText: "",
+      selectedMethods: new Set(),
+      selectedResources: new Set(),
+      selectedDomains: new Set(),
+      filtersExpanded: true,
     };
   }
 
@@ -105,7 +113,7 @@ class DevTools extends React.Component {
 
   async addRequestToStack(request, version, harEntry = null) {
     console.log("DevTools - addRequestToStack called with:", request, version, harEntry);
-    if (this.state.snippetLanguage === "powershell") {
+    if (this.state.snippetLanguage === "powershell" || this.state.snippetLanguage === "powershell-local") {
       const requestKey = `${Date.now()}-${Math.random()}`;
 
       // Render local PowerShell immediately so users always get a snippet without waiting on network calls.
@@ -124,6 +132,11 @@ class DevTools extends React.Component {
 
       localCodeView.__requestKey = requestKey;
       this.setState((prevState) => ({ stack: [...prevState.stack, localCodeView] }));
+
+      // For powershell-local, skip DevX upgrade
+      if (this.state.snippetLanguage === "powershell-local") {
+        return;
+      }
 
       // Try to upgrade to server-generated snippets; keep local content if DevX doesn't return valid code.
       const serverCodeView = await getCodeView(
@@ -221,6 +234,171 @@ class DevTools extends React.Component {
     } else {
       await this.addRequestToStack(request, "", harEntry);
     }
+  }
+
+  // --- Filter helpers ---
+
+  static extractMethod(displayRequestUrl) {
+    if (!displayRequestUrl) return "";
+    return displayRequestUrl.split(" ")[0].toUpperCase();
+  }
+
+  static isGuidSegment(segment) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment);
+  }
+
+  static buildResourceLabel(pathParts, startIndex) {
+    if (startIndex >= pathParts.length) return "";
+    const root = pathParts[startIndex].toLowerCase();
+    // Walk remaining segments to find a non-GUID leaf
+    for (let i = startIndex + 1; i < pathParts.length; i++) {
+      if (!DevTools.isGuidSegment(pathParts[i])) {
+        return `${root}-${pathParts[i].toLowerCase()}`;
+      }
+    }
+    return root;
+  }
+
+  static extractResource(displayRequestUrl) {
+    if (!displayRequestUrl) return "";
+    const parts = displayRequestUrl.split(" ");
+    const url = parts.length > 1 ? parts[1] : parts[0];
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split("/").filter(Boolean);
+      const start = pathParts.length > 0 && /^(v1\.0|beta)$/i.test(pathParts[0]) ? 1 : 0;
+      return DevTools.buildResourceLabel(pathParts, start);
+    } catch {
+      const cleanUrl = url.split("?")[0];
+      const pathParts = cleanUrl.replace(/^\/*/, "").split("/").filter(Boolean);
+      const start = pathParts.length > 0 && /^(v1\.0|beta)$/i.test(pathParts[0]) ? 1 : 0;
+      return DevTools.buildResourceLabel(pathParts, start);
+    }
+  }
+
+  static extractResourceFromPath(urlPath) {
+    if (!urlPath) return "";
+    const cleanPath = urlPath.split("?")[0];
+    const pathParts = cleanPath.replace(/^\/*/, "").split("/").filter(Boolean);
+    const start = pathParts.length > 0 && /^(v1\.0|beta)$/i.test(pathParts[0]) ? 1 : 0;
+    return DevTools.buildResourceLabel(pathParts, start);
+  }
+
+  static extractDomain(displayRequestUrl) {
+    if (!displayRequestUrl) return "";
+    const parts = displayRequestUrl.split(" ");
+    const url = parts.length > 1 ? parts[1] : parts[0];
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return "";
+    }
+  }
+
+  static isBatchItem(item) {
+    return item.batchCodeSnippets && item.batchCodeSnippets.length > 0;
+  }
+
+  static getBatchResources(item) {
+    if (!DevTools.isBatchItem(item)) return [];
+    return item.batchCodeSnippets.map((s) => DevTools.extractResourceFromPath(s.url)).filter(Boolean);
+  }
+
+  static getBatchMethods(item) {
+    if (!DevTools.isBatchItem(item)) return [];
+    return item.batchCodeSnippets.map((s) => (s.method || "").toUpperCase()).filter(Boolean);
+  }
+
+  getFilteredStack() {
+    const { stack, filterText, selectedMethods, selectedResources, selectedDomains } = this.state;
+    const search = filterText.toLowerCase();
+    return stack.filter((item) => {
+      if (search && !item.displayRequestUrl.toLowerCase().includes(search)) {
+        // Also search inside batch sub-request URLs
+        if (!DevTools.isBatchItem(item) || !item.batchCodeSnippets.some((s) => s.url.toLowerCase().includes(search))) {
+          return false;
+        }
+      }
+      if (selectedMethods.size > 0) {
+        if (DevTools.isBatchItem(item)) {
+          if (!DevTools.getBatchMethods(item).some((m) => selectedMethods.has(m))) return false;
+        } else {
+          if (!selectedMethods.has(DevTools.extractMethod(item.displayRequestUrl))) return false;
+        }
+      }
+      if (selectedResources.size > 0) {
+        if (DevTools.isBatchItem(item)) {
+          if (!DevTools.getBatchResources(item).some((r) => selectedResources.has(r))) return false;
+        } else {
+          if (!selectedResources.has(DevTools.extractResource(item.displayRequestUrl))) return false;
+        }
+      }
+      if (selectedDomains.size > 0 && !selectedDomains.has(DevTools.extractDomain(item.displayRequestUrl))) return false;
+      return true;
+    });
+  }
+
+  getUniqueMethods() {
+    const counts = {};
+    this.state.stack.forEach((item) => {
+      if (DevTools.isBatchItem(item)) {
+        DevTools.getBatchMethods(item).forEach((m) => { counts[m] = (counts[m] || 0) + 1; });
+      } else {
+        const m = DevTools.extractMethod(item.displayRequestUrl);
+        if (m) counts[m] = (counts[m] || 0) + 1;
+      }
+    });
+    return counts;
+  }
+
+  getUniqueResources() {
+    const counts = {};
+    this.state.stack.forEach((item) => {
+      if (DevTools.isBatchItem(item)) {
+        DevTools.getBatchResources(item).forEach((r) => { counts[r] = (counts[r] || 0) + 1; });
+      } else {
+        const r = DevTools.extractResource(item.displayRequestUrl);
+        if (r) counts[r] = (counts[r] || 0) + 1;
+      }
+    });
+    return counts;
+  }
+
+  getUniqueDomains() {
+    const counts = {};
+    this.state.stack.forEach((item) => {
+      const d = DevTools.extractDomain(item.displayRequestUrl);
+      if (d) counts[d] = (counts[d] || 0) + 1;
+    });
+    return counts;
+  }
+
+  toggleSetItem(stateKey, value) {
+    this.setState((prevState) => {
+      const updated = new Set(prevState[stateKey]);
+      if (updated.has(value)) {
+        updated.delete(value);
+      } else {
+        updated.add(value);
+      }
+      return { [stateKey]: updated };
+    });
+  }
+
+  getBatchFilter() {
+    const { filterText, selectedMethods, selectedResources } = this.state;
+    const hasFilter = filterText || selectedMethods.size > 0 || selectedResources.size > 0;
+    if (!hasFilter) return null;
+    const search = filterText.toLowerCase();
+    return (method, url) => {
+      if (search && !url.toLowerCase().includes(search)) return false;
+      if (selectedMethods.size > 0 && !selectedMethods.has((method || "").toUpperCase())) return false;
+      if (selectedResources.size > 0) {
+        const resource = DevTools.extractResourceFromPath(url);
+        if (!selectedResources.has(resource)) return false;
+      }
+      return true;
+    };
   }
 
   onLanguageChange = (e, option) => {
@@ -329,7 +507,17 @@ class DevTools extends React.Component {
               </div>
             </div>
           </div>
-          {this.state.stack && this.state.stack.length > 0 && (
+          {this.state.stack && this.state.stack.length > 0 && (() => {
+            const methodCounts = this.getUniqueMethods();
+            const resourceCounts = this.getUniqueResources();
+            const domainCounts = this.getUniqueDomains();
+            const filteredStack = this.getFilteredStack();
+            const showDomainFilter = this.state.ultraXRayMode && Object.keys(domainCounts).length > 1;
+            const countRequests = (items) => items.reduce((n, item) =>
+              n + (DevTools.isBatchItem(item) ? item.batchCodeSnippets.length : 1), 0);
+            const totalCount = countRequests(this.state.stack);
+            const filteredCount = countRequests(filteredStack);
+            return (
             <div
               style={{
                 boxShadow: theme.effects.elevation16,
@@ -337,7 +525,91 @@ class DevTools extends React.Component {
                 marginBottom: "15px",
               }}
             >
-              {this.state.stack.map((request, index) => (
+              {/* Filter bar */}
+              <div className="gxr-filter-bar">
+                <div className="gxr-filter-header">
+                  <button
+                    className="gxr-filter-toggle"
+                    onClick={() => this.setState((prev) => ({ filtersExpanded: !prev.filtersExpanded }))}
+                    title={this.state.filtersExpanded ? "Collapse filters" : "Expand filters"}
+                  >
+                    <span className={`gxr-filter-chevron ${this.state.filtersExpanded ? "gxr-filter-chevron-open" : ""}`}>&#9656;</span>
+                    Filters
+                  </button>
+                  <span className="gxr-filter-count">
+                    {filteredCount === totalCount
+                      ? `${totalCount} requests`
+                      : `${filteredCount} of ${totalCount} requests`}
+                  </span>
+                  {(this.state.filterText || this.state.selectedMethods.size > 0 || this.state.selectedResources.size > 0 || this.state.selectedDomains.size > 0) && (
+                    <button
+                      className="gxr-pill gxr-pill-clear"
+                      onClick={() => this.setState({ filterText: "", selectedMethods: new Set(), selectedResources: new Set(), selectedDomains: new Set() })}
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+
+                {this.state.filtersExpanded && (
+                  <div className="gxr-filter-body">
+                    <SearchBox
+                      placeholder="Filter by URL..."
+                      value={this.state.filterText}
+                      onChange={(_, val) => this.setState({ filterText: val || "" })}
+                      onClear={() => this.setState({ filterText: "" })}
+                      styles={{ root: { maxWidth: 300, minWidth: 180 } }}
+                    />
+
+                    {Object.keys(methodCounts).length > 0 && (
+                      <div className="gxr-pill-group">
+                        <span className="gxr-pill-label">Method</span>
+                        {Object.entries(methodCounts).sort((a, b) => a[0].localeCompare(b[0])).map(([method, count]) => (
+                          <button
+                            key={method}
+                            className={`gxr-pill gxr-pill-method ${this.state.selectedMethods.has(method) ? "gxr-pill-active" : ""}`}
+                            onClick={() => this.toggleSetItem("selectedMethods", method)}
+                          >
+                            {method} <span className="gxr-pill-count">{count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {Object.keys(resourceCounts).length > 0 && (
+                      <div className="gxr-pill-group">
+                        <span className="gxr-pill-label">Resource</span>
+                        {Object.entries(resourceCounts).sort((a, b) => b[1] - a[1]).map(([resource, count]) => (
+                          <button
+                            key={resource}
+                            className={`gxr-pill gxr-pill-resource ${this.state.selectedResources.has(resource) ? "gxr-pill-active" : ""}`}
+                            onClick={() => this.toggleSetItem("selectedResources", resource)}
+                          >
+                            {resource} <span className="gxr-pill-count">{count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {showDomainFilter && (
+                      <div className="gxr-pill-group">
+                        <span className="gxr-pill-label">Domain</span>
+                        {Object.entries(domainCounts).sort((a, b) => b[1] - a[1]).map(([domain, count]) => (
+                          <button
+                            key={domain}
+                            className={`gxr-pill gxr-pill-domain ${this.state.selectedDomains.has(domain) ? "gxr-pill-active" : ""}`}
+                            onClick={() => this.toggleSetItem("selectedDomains", domain)}
+                          >
+                            {domain} <span className="gxr-pill-count">{count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {filteredStack.map((request, index) => (
                 <div
                   key={index}
                   style={{
@@ -351,11 +623,13 @@ class DevTools extends React.Component {
                     request={request}
                     lightUrl={true}
                     snippetLanguage={this.state.snippetLanguage}
+                    batchFilter={this.getBatchFilter()}
                   ></CodeView>
                 </div>
               ))}
             </div>
-          )}
+            );
+          })()}
         </header>
       </div>
     );

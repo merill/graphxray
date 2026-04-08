@@ -103,6 +103,19 @@ function generateLocalPowerShellSnippet(method, url, body, options = {}) {
 async function getSnippetFromDevX(snippetLanguage, method, url, body, options = {}) {
   console.log("Get code snippet from DevX:", url, method);
 
+  // REST mode: return the raw URL only (no code generation)
+  if (snippetLanguage === "rest") {
+    const { host, path } = parseGraphUrl(url);
+    const fullUrl = `https://${host}/${path.replace(/^\/+/, '')}`;
+    return fullUrl;
+  }
+
+  // PowerShell (Invoke-MgGraphRequest): always use local generation, never call DevX
+  if (snippetLanguage === "powershell-local") {
+    const bodyText = body ?? "";
+    return generateLocalPowerShellSnippet(method, url, bodyText, options);
+  }
+
   if (isUltraXRayDomain(url)) {
     console.log("Skipping DevX call for Ultra X-Ray domain:", url);
     return null;
@@ -369,7 +382,8 @@ const getBatchCodeSnippets = async function (
       console.log("Generating snippet for batch request:", request.id, request.method, request.url);
       
       // Construct full URL for the individual request
-      const fullUrl = `${baseUrl}${request.url}`;
+      const subPath = request.url.startsWith("/") ? request.url : `/${request.url}`;
+      const fullUrl = `${baseUrl}${subPath}`;
       
       // Get the body for this individual request
       const requestBodyText = request.body ? JSON.stringify(request.body) : "";
