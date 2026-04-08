@@ -48,7 +48,6 @@ module.exports = {
   appPopupHtml: resolveApp('public/popup.html'),
   appIndexJs: resolveModule(resolveApp, 'src/index'),
   appBackgroundJs: resolveModule(resolveApp, 'src/background/index'),
-  appContentScriptJs: resolveModule(resolveApp, 'src/contentScript/index'),
   appOptionsJs: resolveModule(resolveApp, 'src/options/index'),
   appDevToolsJs: resolveModule(resolveApp, 'src/devtools/index'),
   // Keep CRA's service worker path key defined so downstream fs.existsSync checks always receive a valid path.

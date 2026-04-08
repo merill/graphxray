@@ -48,7 +48,6 @@ if (
     paths.manifestJson,
     paths.appIndexJs,
     paths.appBackgroundJs,
-    paths.appContentScriptJs,
     paths.appOptionsHtml,
     paths.appOptionsJs,
     paths.appDevToolsHtml,

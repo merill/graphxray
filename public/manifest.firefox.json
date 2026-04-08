@@ -15,13 +15,6 @@
     "persistent": false
   },
 
-  "content_scripts": [
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["contentScript.bundle.js"]
-    }
-  ],
-
   "permissions": [
     "webRequest"
   ],
