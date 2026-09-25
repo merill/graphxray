@@ -169,5 +169,10 @@
     "presets": [
       "react-app"
     ]
+  },
+  "overrides": {
+    "react-dev-utils": {
+      "immer": "9.0.6"
+    }
   }
 }
