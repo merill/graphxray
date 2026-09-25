@@ -252,6 +252,12 @@ This project was originally a hackathon project by [Eunice](https://twitter.com/
 
 Special thanks to [@jorgeasaurus](https://github.com/jorgeasaurus) for major contributions including Firefox support and key reliability improvements such as the PowerShell fallback behavior.
 
+## Sponsors
+
+Graph X-Ray is free and ad-free, with no investors behind it. If it saves you time, please consider [sponsoring me on GitHub](https://github.com/sponsors/merill). 💙
+
+<a href="https://github.com/sponsors/merill"><img src="https://raw.githubusercontent.com/merill/sponsors/main/sponsors.svg" alt="Sponsors"></a>
+
 ## License
 
 Licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
