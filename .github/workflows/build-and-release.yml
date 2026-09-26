@@ -27,6 +27,11 @@ jobs:
     - name: Install dependencies
       run: npm install
 
+    - name: Run tests
+      run: npm test
+      env:
+        CI: true
+
     - name: Get current version
       id: get_version
       run: |

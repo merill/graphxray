@@ -132,7 +132,7 @@
       "<rootDir>/src/**/*.{spec,test}.{js,jsx,ts,tsx}"
     ],
     "testEnvironment": "jsdom",
-    "testRunner": "C:\\Users\\dhruvmu\\Projects\\EffortCounter\\EffortCounter.BrowserExtension\\node_modules\\jest-circus\\runner.js",
+    "testRunner": "jest-circus/runner",
     "transform": {
       "^.+\\.(js|jsx|mjs|cjs|ts|tsx)$": "<rootDir>/config/jest/babelTransform.js",
       "^.+\\.css$": "<rootDir>/config/jest/cssTransform.js",
@@ -145,6 +145,7 @@
     "modulePaths": [],
     "moduleNameMapper": {
       "^react-native$": "react-native-web",
+      "^@fluentui/([^/]+)/lib/(.*)$": "@fluentui/$1/lib-commonjs/$2",
       "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy"
     },
     "moduleFileExtensions": [
